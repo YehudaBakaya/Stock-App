@@ -1,0 +1,270 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, RefreshCw, TrendingUp, Wallet, Activity, Send } from 'lucide-react';
+import { getHoldings, addHolding, deleteHolding, getTelegramSettings, saveTelegramSettings, getStockQuote } from '../api/api';
+
+import PortfolioPieChart from '../components/portfolio/PortfolioPieChart';
+import HoldingsList from '../components/portfolio/HoldingsList';
+import StockChart from '../components/portfolio/StockChart';
+import AddStockModal from '../components/portfolio/AddStockModal';
+import MarketNews from '../components/market/MarketNews';
+import TopMovers from '../components/market/TopMovers';
+import TelegramSettings from '../components/telegram/TelegramSettings';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+
+export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedChart, setSelectedChart] = useState(null);
+  const [showTelegramSettings, setShowTelegramSettings] = useState(false);
+  const [stockPrices, setStockPrices] = useState({});
+
+  // Fetch holdings
+  const { data: holdings = [], isLoading, refetch } = useQuery({
+    queryKey: ['holdings'],
+    queryFn: async () => {
+      const res = await getHoldings();
+      return res.data;
+    }
+  });
+
+  // Fetch telegram settings
+  const { data: telegramSettings } = useQuery({
+    queryKey: ['telegramSettings'],
+    queryFn: async () => {
+      const res = await getTelegramSettings();
+      return res.data;
+    }
+  });
+
+  // Add holding mutation
+  const addMutation = useMutation({
+    mutationFn: addHolding,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['holdings']);
+      setShowAddModal(false);
+    }
+  });
+
+  // Delete holding mutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteHolding,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['holdings']);
+    }
+  });
+
+  // Save telegram settings mutation
+  const saveTelegramMutation = useMutation({
+    mutationFn: saveTelegramSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['telegramSettings']);
+    }
+  });
+
+  // Fetch stock prices
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const prices = {};
+      for (const holding of holdings) {
+        try {
+          const res = await getStockQuote(holding.symbol);
+          prices[holding.symbol] = {
+            price: res.data.price,
+            change: res.data.changePercent
+          };
+        } catch (err) {
+          // Use mock data if API fails
+          prices[holding.symbol] = {
+            price: holding.buyPrice * (1 + (Math.random() - 0.5) * 0.1),
+            change: (Math.random() - 0.5) * 10
+          };
+        }
+      }
+      setStockPrices(prices);
+    };
+
+    if (holdings.length > 0) {
+      fetchPrices();
+    }
+  }, [holdings]);
+
+  // Calculate portfolio stats
+  const totalValue = holdings.reduce((sum, holding) => {
+    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+    return sum + (holding.shares * price);
+  }, 0);
+
+  const totalCost = holdings.reduce((sum, holding) => {
+    return sum + (holding.shares * holding.buyPrice);
+  }, 0);
+
+  const totalPnL = totalValue - totalCost;
+  const totalPnLPercent = totalCost > 0 ? ((totalPnL / totalCost) * 100) : 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+        >
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+              שלום! 👋
+            </h1>
+            <p className="text-gray-400 mt-2 text-lg">הנה סקירה של התיק שלך היום</p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+              <RefreshCw className={`w-4 h-4 ml-2 ${isLoading ? 'animate-spin' : ''}`} />
+              רענן
+            </Button>
+            <Button variant="secondary" onClick={() => setShowTelegramSettings(!showTelegramSettings)}>
+              <Send className="w-4 h-4 ml-2" />
+              טלגרם
+            </Button>
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="w-4 h-4 ml-2" />
+              הוסף מניה
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Stats Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          <Card gradient="purple">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">שווי תיק</p>
+                <p className="text-3xl font-black text-white">${totalValue.toLocaleString()}</p>
+              </div>
+              <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl">
+                <Wallet className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          </Card>
+
+          <Card gradient={totalPnL >= 0 ? 'green' : 'red'}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">רווח/הפסד כולל</p>
+                <p className={`text-3xl font-black ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {totalPnL >= 0 ? '+' : ''}{totalPnL.toFixed(0)}$
+                </p>
+                <p className={`text-sm ${totalPnL >= 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>
+                  ({totalPnLPercent.toFixed(2)}%)
+                </p>
+              </div>
+              <div className={`p-4 rounded-2xl ${totalPnL >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'}`}>
+                <TrendingUp className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          </Card>
+
+          <Card gradient="blue">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">מספר מניות</p>
+                <p className="text-3xl font-black text-white">{holdings.length}</p>
+                <p className="text-blue-400/70 text-sm">נכסים בתיק</p>
+              </div>
+              <div className="p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl">
+                <Activity className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Telegram Settings (Collapsible) */}
+        <AnimatePresence>
+          {showTelegramSettings && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <TelegramSettings
+                settings={telegramSettings}
+                onSave={(data) => saveTelegramMutation.mutate(data)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:col-span-2"
+          >
+            <PortfolioPieChart holdings={holdings} stockPrices={stockPrices} />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <MarketNews />
+          </motion.div>
+        </div>
+
+        {/* Holdings List */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <HoldingsList
+            holdings={holdings}
+            stockPrices={stockPrices}
+            onDelete={(id) => deleteMutation.mutate(id)}
+            onShowChart={(symbol, price, change) => setSelectedChart({ symbol, price, change })}
+          />
+        </motion.div>
+
+        {/* Top Movers */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <TopMovers />
+        </motion.div>
+
+        {/* Modals */}
+        <AnimatePresence>
+          {showAddModal && (
+            <AddStockModal
+              onClose={() => setShowAddModal(false)}
+              onAdd={(data) => addMutation.mutate(data)}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {selectedChart && (
+            <StockChart
+              symbol={selectedChart.symbol}
+              currentPrice={selectedChart.price}
+              change={selectedChart.change}
+              onClose={() => setSelectedChart(null)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}

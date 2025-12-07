@@ -10,7 +10,7 @@
     LogOut,
     Sparkles,
     Menu,
-    X
+    X, Zap
   } from 'lucide-react';
 
   export default function Layout({ children }) {
@@ -18,12 +18,13 @@
     const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const navigationItems = [
-      { title: 'דשבורד', url: '/', icon: BarChart3 },
-      { title: 'שוק המניות', url: '/stocks', icon: TrendingUp },
-      { title: 'תיק השקעות', url: '/portfolio', icon: Briefcase },
-      { title: 'פרופיל', url: '/profile', icon: User },
-    ];
+  const navigationItems = [
+  { title: 'דשבורד', url: '/', icon: BarChart3 },
+  { title: 'שוק המניות', url: '/Stocks', icon: TrendingUp },
+  { title: 'טריידינג', url: '/trading', icon: Zap }, // <-- הוספנו
+  { title: 'תיק השקעות', url: '/Portfolio', icon: Briefcase },
+  { title: 'פרופיל', url: '/profile', icon: User },
+];
 
     return (
       <div className="min-h-screen flex bg-gray-950 text-white" dir="rtl">

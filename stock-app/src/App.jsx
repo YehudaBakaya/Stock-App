@@ -1,22 +1,26 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
 import Layout from './Layout';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
- 
-// Placeholder components
-const Stocks = () => <div className="p-4 text-white">דף שוק המניות</div>;
-const Portfolio = () => <div className="p-4 text-white">דף תיק השקעות</div>;
-const Profile = () => <div className="p-4 text-white">דף פרופיל</div>;
+import Stocks from './pages/Stocks';
+import Profile from './pages/Profile';
+import TradingGoals from './pages/Trading Goals';
+import Portfolio from "./pages/Portfolio"
 
 const queryClient = new QueryClient();
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-gray-950" />;
-  return user ? children : <Navigate to="/login" />;
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-950" />;
+  }
+
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 export default function App() {
@@ -25,29 +29,65 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            <Route path="/" element={
-              <PrivateRoute>
-                <Layout><Dashboard /></Layout>
-              </PrivateRoute>
-            } />
-            <Route path="/stocks" element={
-              <PrivateRoute>
-                <Layout><Stocks /></Layout>
-              </PrivateRoute>
-            } />
-            <Route path="/portfolio" element={
-              <PrivateRoute>
-                <Layout><Portfolio /></Layout>
-              </PrivateRoute>
-            } />
-            <Route path="/profile" element={
-              <PrivateRoute>
-                <Layout><Profile /></Layout>
-              </PrivateRoute>
-            } />
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/Stocks"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Stocks />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/portfolio"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Portfolio />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Profile />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/trading"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <TradingGoals />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

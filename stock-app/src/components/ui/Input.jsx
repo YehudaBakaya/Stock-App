@@ -11,7 +11,7 @@ export default function Input({
   return (
     <div className={className}>
       {label && (
-        <label className="text-gray-300 text-sm mb-2 block">{label}</label>
+        <label className="text-slate-300 text-sm mb-2 block">{label}</label>
       )}
       <div className="relative">
         {Icon && (
@@ -22,7 +22,7 @@ export default function Input({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full bg-gray-800 border border-gray-700 rounded-xl py-3 text-white focus:border-purple-500 focus:outline-none transition-colors ${Icon ? 'pr-11 pl-4' : 'px-4'}`}
+          className={`w-full bg-white/5 border border-white/10 rounded-xl py-3 text-white focus:border-emerald-400 focus:outline-none transition-colors ${Icon ? 'pr-11 pl-4' : 'px-4'}`}
           {...props}
         />
       </div>

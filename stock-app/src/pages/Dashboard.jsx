@@ -105,7 +105,7 @@ export default function Dashboard() {
   const totalPnLPercent = totalCost > 0 ? ((totalPnL / totalCost) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
+    <div className="min-h-screen app-bg p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <motion.div
@@ -114,10 +114,10 @@ export default function Dashboard() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
         >
           <div>
-            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-black font-display bg-gradient-to-r from-white via-emerald-100 to-amber-100 bg-clip-text text-transparent">
               שלום! 👋
             </h1>
-            <p className="text-gray-400 mt-2 text-lg">הנה סקירה של התיק שלך היום</p>
+            <p className="text-slate-400 mt-2 text-lg">הנה סקירה של התיק שלך היום</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
@@ -145,10 +145,10 @@ export default function Dashboard() {
           <Card gradient="purple">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">שווי תיק</p>
+                <p className="text-slate-400 text-sm mb-1">שווי תיק</p>
                 <p className="text-3xl font-black text-white">${totalValue.toLocaleString()}</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl">
+              <div className="p-4 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-2xl shadow-lg shadow-emerald-500/20">
                 <Wallet className="w-8 h-8 text-white" />
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function Dashboard() {
           <Card gradient={totalPnL >= 0 ? 'green' : 'red'}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">רווח/הפסד כולל</p>
+                <p className="text-slate-400 text-sm mb-1">רווח/הפסד כולל</p>
                 <p className={`text-3xl font-black ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {totalPnL >= 0 ? '+' : ''}{totalPnL.toFixed(0)}$
                 </p>
@@ -165,7 +165,7 @@ export default function Dashboard() {
                   ({totalPnLPercent.toFixed(2)}%)
                 </p>
               </div>
-              <div className={`p-4 rounded-2xl ${totalPnL >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'}`}>
+              <div className={`p-4 rounded-2xl ${totalPnL >= 0 ? 'bg-gradient-to-r from-emerald-400 to-emerald-300 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-r from-red-500 to-rose-500'}`}>
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
             </div>
@@ -174,11 +174,11 @@ export default function Dashboard() {
           <Card gradient="blue">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">מספר מניות</p>
+                <p className="text-slate-400 text-sm mb-1">מספר מניות</p>
                 <p className="text-3xl font-black text-white">{holdings.length}</p>
-                <p className="text-blue-400/70 text-sm">נכסים בתיק</p>
+                <p className="text-cyan-300/70 text-sm">נכסים בתיק</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl">
+              <div className="p-4 bg-gradient-to-r from-cyan-400 to-sky-300 rounded-2xl shadow-lg shadow-cyan-500/20">
                 <Activity className="w-8 h-8 text-white" />
               </div>
             </div>

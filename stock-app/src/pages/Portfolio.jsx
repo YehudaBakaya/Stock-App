@@ -22,7 +22,7 @@ const mockHoldings = [
   { symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 35, avgCost: 160.00, currentPrice: 155.75, marketValue: 5451.25, unrealizedPnL: -148.75, pnLPercent: -2.7, sector: 'E-commerce' },
 ];
 
-const COLORS = ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+const COLORS = ['#34d399', '#38bdf8', '#fbbf24', '#22c55e', '#f97316', '#06b6d4'];
 
 export default function Portfolio() {
   const [holdings] = useState(mockHoldings);
@@ -46,7 +46,7 @@ export default function Portfolio() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-gray-800 p-3 border border-gray-700 rounded-lg text-white text-sm">
+        <div className="bg-white/5 p-3 border border-white/10 rounded-lg text-white text-sm backdrop-blur">
           <p className="font-semibold">{data.name}</p>
           <p>${data.value.toLocaleString()} ({data.percentage}%)</p>
         </div>
@@ -56,12 +56,12 @@ export default function Portfolio() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6">
+    <div className="min-h-screen app-bg p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
           <Briefcase className="w-6 h-6 text-white" />
-          <h1 className="text-3xl font-bold text-white">Portfolio</h1>
+          <h1 className="text-3xl font-bold font-display text-white">Portfolio</h1>
         </motion.div>
 
         {/* Portfolio Summary */}
@@ -69,27 +69,27 @@ export default function Portfolio() {
           <Card>
             <CardContent className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-400">Total Equity</p>
+                <p className="text-sm text-slate-400">Total Equity</p>
                 <p className="text-2xl font-bold text-white">${totalEquity.toLocaleString()}</p>
               </div>
-              <DollarSign className="w-6 h-6 text-blue-500"/>
+              <DollarSign className="w-6 h-6 text-emerald-300"/>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-400">Market Value</p>
+                <p className="text-sm text-slate-400">Market Value</p>
                 <p className="text-2xl font-bold text-white">${totalMarketValue.toLocaleString()}</p>
               </div>
-              <TrendingUp className="w-6 h-6 text-green-500"/>
+              <TrendingUp className="w-6 h-6 text-emerald-300"/>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-400">Unrealized P&L</p>
+                <p className="text-sm text-slate-400">Unrealized P&L</p>
                 <p className={`text-2xl font-bold ${totalUnrealizedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {totalUnrealizedPnL >= 0 ? '+' : ''}${totalUnrealizedPnL.toLocaleString()}
                 </p>
@@ -101,10 +101,10 @@ export default function Portfolio() {
           <Card>
             <CardContent className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-400">Cash Balance</p>
+                <p className="text-sm text-slate-400">Cash Balance</p>
                 <p className="text-2xl font-bold text-white">${cashBalance.toLocaleString()}</p>
               </div>
-              <DollarSign className="w-6 h-6 text-purple-500"/>
+              <DollarSign className="w-6 h-6 text-amber-300"/>
             </CardContent>
           </Card>
         </div>

@@ -64,7 +64,7 @@ export default function TradingGoals() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
+    <div className="min-h-screen app-bg p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <motion.div
@@ -72,13 +72,13 @@ export default function TradingGoals() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-2xl mb-4 shadow-lg shadow-emerald-500/20">
             <Target className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl md:text-5xl font-black font-display bg-gradient-to-r from-white via-emerald-100 to-amber-100 bg-clip-text text-transparent mb-2">
             יעדי טריידינג 🎯
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-slate-400 text-lg">
             תכנן את המסע שלך להצלחה פינסית
           </p>
         </motion.div>
@@ -89,51 +89,51 @@ export default function TradingGoals() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
-            <CardHeader className="border-b border-gray-700/50">
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="border-b border-white/10">
               <CardTitle className="text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-400" />
+                <Zap className="w-5 h-5 text-amber-300" />
                 הגדר את היעדים שלך
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label className="text-gray-300 mb-2 block">הון נוכחי ($)</Label>
+                  <Label className="text-slate-200 mb-2 block">הון נוכחי ($)</Label>
                   <div className="relative">
-                    <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
                       type="number"
                       value={currentCapital}
                       onChange={(e) => setCurrentCapital(parseFloat(e.target.value) || 0)}
-                      className="pr-10 bg-gray-800 border-gray-700 text-white text-xl font-bold"
+                      className="pr-10 text-xl font-bold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-gray-300 mb-2 block">יעד הון ($)</Label>
+                  <Label className="text-slate-200 mb-2 block">יעד הון ($)</Label>
                   <div className="relative">
-                    <Target className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Target className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
                       type="number"
                       value={targetCapital}
                       onChange={(e) => setTargetCapital(parseFloat(e.target.value) || 0)}
-                      className="pr-10 bg-gray-800 border-gray-700 text-white text-xl font-bold"
+                      className="pr-10 text-xl font-bold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-gray-300 mb-2 block">רווח שבועי ממוצע (%)</Label>
+                  <Label className="text-slate-200 mb-2 block">רווח שבועי ממוצע (%)</Label>
                   <div className="relative">
-                    <TrendingUp className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <TrendingUp className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
                       type="number"
                       step="0.1"
                       value={weeklyReturn}
                       onChange={(e) => setWeeklyReturn(parseFloat(e.target.value) || 0)}
-                      className="pr-10 bg-gray-800 border-gray-700 text-white text-xl font-bold"
+                      className="pr-10 text-xl font-bold"
                     />
                   </div>
                 </div>
@@ -149,56 +149,56 @@ export default function TradingGoals() {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
-          <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+          <Card className="bg-gradient-to-br from-emerald-500/15 to-amber-500/10 border-emerald-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">שבועות ליעד</p>
                   <p className="text-4xl font-black text-white">{weeksToGoal}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl">
+                <div className="p-4 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-2xl shadow-lg shadow-emerald-500/20">
                   <Calendar className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+          <Card className="bg-gradient-to-br from-sky-500/15 to-cyan-500/10 border-sky-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">חודשים ליעד</p>
                   <p className="text-4xl font-black text-white">{monthsToGoal}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl">
+                <div className="p-4 bg-gradient-to-r from-cyan-400 to-sky-300 rounded-2xl shadow-lg shadow-cyan-500/20">
                   <Calendar className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+          <Card className="bg-gradient-to-br from-emerald-500/15 to-emerald-400/10 border-emerald-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">רווח נדרש</p>
                   <p className="text-3xl font-black text-green-400">+{totalReturnNeeded}%</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl">
+                <div className="p-4 bg-gradient-to-r from-emerald-400 to-emerald-300 rounded-2xl shadow-lg shadow-emerald-500/20">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/30">
+          <Card className="bg-gradient-to-br from-amber-500/15 to-orange-500/10 border-amber-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">התקדמות</p>
-                  <p className="text-3xl font-black text-yellow-400">{progressPercent.toFixed(1)}%</p>
+                  <p className="text-3xl font-black text-amber-300">{progressPercent.toFixed(1)}%</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl">
+                <div className="p-4 bg-gradient-to-r from-amber-400 to-orange-400 rounded-2xl shadow-lg shadow-amber-500/20">
                   <Award className="w-8 h-8 text-white" />
                 </div>
               </div>
@@ -212,22 +212,22 @@ export default function TradingGoals() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
+          <Card className="bg-white/5 border-white/10">
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Rocket className="w-6 h-6 text-purple-400" />
+                    <Rocket className="w-6 h-6 text-emerald-300" />
                     <div>
                       <p className="text-white font-bold text-lg">מסלול ההצלחה שלך</p>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-slate-400 text-sm">
                         ${currentCapital.toLocaleString()} → ${targetCapital.toLocaleString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-gray-400 text-sm">נותרו</p>
-                    <p className="text-2xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <p className="text-slate-400 text-sm">נותרו</p>
+                    <p className="text-2xl font-black bg-gradient-to-r from-emerald-200 to-amber-200 bg-clip-text text-transparent">
                       ${(targetCapital - currentCapital).toLocaleString()}
                     </p>
                   </div>
@@ -235,7 +235,7 @@ export default function TradingGoals() {
                 <div className="relative">
                   <Progress value={progressPercent} className="h-6" />
                   <div 
-                    className="absolute left-0 top-0 h-6 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full transition-all duration-500"
+                    className="absolute left-0 top-0 h-6 bg-gradient-to-r from-emerald-400 via-amber-300 to-emerald-400 rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -251,10 +251,10 @@ export default function TradingGoals() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
-              <CardHeader className="border-b border-gray-700/50">
+            <Card className="bg-white/5 border-white/10">
+              <CardHeader className="border-b border-white/10">
                 <CardTitle className="text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
+                  <TrendingUp className="w-5 h-5 text-emerald-300" />
                   תחזית צמיחה
                 </CardTitle>
               </CardHeader>
@@ -264,8 +264,8 @@ export default function TradingGoals() {
                     <AreaChart data={projectionData}>
                       <defs>
                         <linearGradient id="capitalGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#a855f7" stopOpacity={0.4} />
-                          <stop offset="100%" stopColor="#ec4899" stopOpacity={0.1} />
+                          <stop offset="0%" stopColor="#34d399" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.1} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
@@ -282,7 +282,7 @@ export default function TradingGoals() {
                       <Area
                         type="monotone"
                         dataKey="capital"
-                        stroke="#a855f7"
+                        stroke="#34d399"
                         strokeWidth={3}
                         fill="url(#capitalGradient)"
                       />
@@ -300,10 +300,10 @@ export default function TradingGoals() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/30">
+          <Card className="bg-gradient-to-br from-sky-500/10 to-emerald-500/10 border-sky-500/20">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
+                <div className="p-3 bg-gradient-to-r from-cyan-400 to-emerald-300 rounded-xl shadow-lg shadow-cyan-500/20">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
@@ -314,15 +314,15 @@ export default function TradingGoals() {
                       רווח של {weeklyReturn}% בשבוע זה אתגר - התחל ביעדים מציאותיים
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                      <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
                       שמור על ניהול סיכונים קפדני - אל תסכן יותר מ-1-2% לעסקה
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
                       עקביות חשובה יותר מרווחים גדולים חד-פעמיים
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
+                      <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
                       תעד כל עסקה ולמד מהטעויות שלך
                     </li>
                   </ul>

@@ -1,6 +1,7 @@
-  import { useState } from 'react';
+  import { useEffect, useState } from 'react';
   import { Link, useLocation } from 'react-router-dom';
   import { useAuth } from './context/AuthContext';
+  import { useTranslation } from 'react-i18next';
   import { 
     BarChart3, 
     TrendingUp, 
@@ -16,18 +17,25 @@
   export default function Layout({ children }) {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { t, i18n } = useTranslation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    useEffect(() => {
+      const nextLang = i18n.language || 'en';
+      document.documentElement.setAttribute('lang', nextLang);
+      document.documentElement.setAttribute('dir', nextLang === 'he' ? 'rtl' : 'ltr');
+    }, [i18n.language]);
+
   const navigationItems = [
-  { title: 'דשבורד', url: '/', icon: BarChart3 },
-  { title: 'שוק המניות', url: '/Stocks', icon: TrendingUp },
-  { title: 'טריידינג', url: '/trading', icon: Zap }, // <-- הוספנו
-  { title: 'תיק השקעות', url: '/Portfolio', icon: Briefcase },
-  { title: 'פרופיל', url: '/profile', icon: User },
+  { title: t('nav.dashboard'), url: '/', icon: BarChart3 },
+  { title: t('nav.stocks'), url: '/Stocks', icon: TrendingUp },
+  { title: t('nav.trading'), url: '/trading', icon: Zap },
+  { title: t('nav.portfolio'), url: '/Portfolio', icon: Briefcase },
+  { title: t('nav.profile'), url: '/profile', icon: User },
 ];
 
     return (
-      <div className="min-h-screen flex bg-gray-950 text-white" dir="rtl">
+      <div className="min-h-screen flex text-white app-bg" dir={i18n.language === 'he' ? 'rtl' : 'ltr'}>
         {/* Mobile Overlay */}
         {sidebarOpen && (
           <div 
@@ -39,26 +47,28 @@
         {/* Sidebar */}
         <aside className={`
           fixed md:static inset-y-0 right-0 z-50
-          w-64 bg-gray-900/95 backdrop-blur-xl border-l border-gray-800
+          w-64 bg-[#0f1722]/95 backdrop-blur-xl border-l border-white/10
           transform transition-transform duration-300
           ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
         `}>
           {/* Logo */}
-          <div className="p-4 border-b border-gray-800">
+          <div className="p-4 border-b border-white/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-black text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <h2 className="font-display text-xl bg-gradient-to-r from-emerald-200 via-white to-amber-200 bg-clip-text text-transparent">
                     StockPro
                   </h2>
-                  <p className="text-xs text-gray-500">פלטפורמת מסחר</p>
+                  <p className="text-xs text-slate-400">
+                    {i18n.language === 'he' ? 'פלטפורמת מסחר' : 'Trading platform'}
+                  </p>
                 </div>
               </div>
               <button 
-                className="md:hidden text-gray-400"
+                className="md:hidden text-slate-400"
                 onClick={() => setSidebarOpen(false)}
               >
                 <X className="w-6 h-6" />
@@ -76,32 +86,32 @@
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-all
                   ${location.pathname === item.url 
-                    ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-white' 
-                    : 'hover:bg-gray-800/50 text-gray-400 hover:text-white'
+                    ? 'bg-white/5 border border-white/10 text-white shadow-sm' 
+                    : 'hover:bg-white/5 text-slate-400 hover:text-white'
                   }
                 `}
               >
-                <item.icon className={`w-5 h-5 ${location.pathname === item.url ? 'text-purple-400' : ''}`} />
+                <item.icon className={`w-5 h-5 ${location.pathname === item.url ? 'text-emerald-300' : ''}`} />
                 <span className="font-medium">{item.title}</span>
               </Link>
             ))}
           </nav>
 
           {/* User */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl">
-              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+          <div className="p-4 border-t border-white/10">
+            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold">
                   {user?.fullName?.charAt(0) || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-white text-sm truncate">{user?.fullName}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
               </div>
               <button 
                 onClick={logout}
-                className="text-gray-400 hover:text-red-400 transition-colors"
+                className="text-slate-400 hover:text-red-400 transition-colors"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -112,22 +122,22 @@
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-h-screen">
           {/* Mobile Header */}
-          <header className="md:hidden bg-gray-900/95 backdrop-blur-xl border-b border-gray-800 px-4 py-3 sticky top-0 z-30">
+          <header className="md:hidden bg-[#0f1722]/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 sticky top-0 z-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button onClick={() => setSidebarOpen(true)}>
                   <Menu className="w-6 h-6 text-white" />
                 </button>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                  <span className="font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <Sparkles className="w-5 h-5 text-emerald-300" />
+                  <span className="font-display bg-gradient-to-r from-emerald-200 via-white to-amber-200 bg-clip-text text-transparent">
                     StockPro
                   </span>
                 </div>
               </div>
               <button className="relative">
-                <Bell className="w-5 h-5 text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
+                <Bell className="w-5 h-5 text-slate-300" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full text-[10px] flex items-center justify-center text-black font-bold">
                   3
                 </span>
               </button>
@@ -140,14 +150,14 @@
           </div>
 
           {/* Mobile Bottom Nav */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1722]/95 backdrop-blur-xl border-t border-white/10">
             <div className="flex items-center justify-around py-2">
               {navigationItems.slice(0, 4).map((item) => (
                 <Link
                   key={item.url}
                   to={item.url}
                   className={`flex flex-col items-center p-2 ${
-                    location.pathname === item.url ? 'text-purple-400' : 'text-gray-500'
+                    location.pathname === item.url ? 'text-emerald-300' : 'text-slate-500'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />

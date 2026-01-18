@@ -7,13 +7,13 @@ export default function Button({
   className = '',
   type = 'button'
 }) {
-  const baseStyles = 'font-bold rounded-xl transition-all flex items-center justify-center';
+  const baseStyles = 'font-bold rounded-xl transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1016]';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white',
-    secondary: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white',
-    outline: 'border border-gray-700 text-gray-300 hover:bg-gray-800',
-    ghost: 'text-gray-400 hover:text-white hover:bg-gray-800',
+    primary: 'bg-gradient-to-r from-emerald-400 to-emerald-300 hover:opacity-90 text-slate-900 shadow-lg shadow-emerald-500/20',
+    secondary: 'bg-gradient-to-r from-amber-300 to-amber-200 hover:opacity-90 text-slate-900 shadow-lg shadow-amber-500/20',
+    outline: 'border border-white/15 text-slate-200 hover:bg-white/5',
+    ghost: 'text-slate-300 hover:text-white hover:bg-white/5',
     danger: 'bg-gradient-to-r from-red-500 to-rose-500 hover:opacity-90 text-white'
   };
 

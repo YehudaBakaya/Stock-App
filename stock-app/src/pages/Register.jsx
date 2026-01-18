@@ -44,27 +44,27 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen app-bg flex items-center justify-center p-4" dir="rtl">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl float-slow" />
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl float-slow" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-black font-display bg-gradient-to-r from-emerald-200 via-white to-amber-200 bg-clip-text text-transparent">
             StockPro
           </h1>
-          <p className="text-gray-400 mt-2">צור חשבון חדש</p>
+          <p className="text-slate-400 mt-2">צור חשבון חדש</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 space-y-5 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-center text-sm">
               {error}
@@ -79,7 +79,7 @@ export default function Register() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pr-11 pl-4 py-3 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pr-11 pl-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-colors"
                 placeholder="ישראל ישראלי"
                 required
               />
@@ -94,7 +94,7 @@ export default function Register() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pr-11 pl-4 py-3 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pr-11 pl-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-colors"
                 placeholder="your@email.com"
                 required
               />
@@ -109,7 +109,7 @@ export default function Register() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pr-11 pl-11 py-3 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pr-11 pl-11 py-3 text-white focus:border-emerald-400 focus:outline-none transition-colors"
                 placeholder="••••••••"
                 required
               />
@@ -131,7 +131,7 @@ export default function Register() {
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pr-11 pl-4 py-3 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pr-11 pl-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-colors"
                 placeholder="••••••••"
                 required
               />
@@ -141,7 +141,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-emerald-400 to-emerald-300 text-slate-900 font-bold py-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -150,9 +150,9 @@ export default function Register() {
             )}
           </button>
 
-          <p className="text-center text-gray-400">
+          <p className="text-center text-slate-400">
             יש לך כבר חשבון?{' '}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link to="/login" className="text-emerald-300 hover:text-emerald-200 font-medium">
               התחבר
             </Link>
           </p>

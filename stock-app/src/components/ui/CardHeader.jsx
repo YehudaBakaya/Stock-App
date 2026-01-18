@@ -1,6 +1,6 @@
 export default function CardHeader({ children, className = '' }) {
   return (
-    <div className={`border-b border-gray-700/50 p-4 ${className}`}>
+    <div className={`border-b border-white/10 p-4 ${className}`}>
       {children}
     </div>
   );

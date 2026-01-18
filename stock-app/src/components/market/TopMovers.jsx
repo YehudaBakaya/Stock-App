@@ -1,21 +1,24 @@
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, TrendingDown, Flame, Snowflake } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-
-const topGainers = [
-  { symbol: 'NVDA', name: 'NVIDIA', price: 875.30, change: 8.45 },
-  { symbol: 'META', name: 'Meta', price: 485.20, change: 5.21 },
-  { symbol: 'AMD', name: 'AMD', price: 168.50, change: 4.32 },
-];
-
-const topLosers = [
-  { symbol: 'TSLA', name: 'Tesla', price: 245.80, change: -3.49 },
-  { symbol: 'BABA', name: 'Alibaba', price: 78.20, change: -2.87 },
-  { symbol: 'DIS', name: 'Disney', price: 95.40, change: -1.95 },
-];
+import { getTopMovers } from '../../api/api';
 
 export default function TopMovers() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['topMovers'],
+    queryFn: async () => {
+      const res = await getTopMovers();
+      return res.data;
+    },
+    staleTime: 60000,
+    refetchInterval: 60000
+  });
+
+  const topGainers = data?.gainers || [];
+  const topLosers = data?.losers || [];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Top Gainers */}
@@ -28,6 +31,12 @@ export default function TopMovers() {
         </div>
 
         <div className="space-y-3">
+          {isLoading && (
+            <div className="text-sm text-slate-400">טוען מובילים...</div>
+          )}
+          {!isLoading && topGainers.length === 0 && (
+            <div className="text-sm text-slate-400">אין נתונים כרגע</div>
+          )}
           {topGainers.map((stock, index) => (
             <motion.div
               key={stock.symbol}
@@ -46,7 +55,9 @@ export default function TopMovers() {
                 </div>
               </div>
               <div className="text-left">
-                <p className="text-white font-bold">${stock.price}</p>
+                <p className="text-white font-bold">
+                  {Number.isFinite(stock.price) ? `$${stock.price.toFixed(2)}` : '—'}
+                </p>
                 <Badge variant="success">+{stock.change}%</Badge>
               </div>
             </motion.div>
@@ -64,6 +75,12 @@ export default function TopMovers() {
         </div>
 
         <div className="space-y-3">
+          {isLoading && (
+            <div className="text-sm text-slate-400">טוען מובילים...</div>
+          )}
+          {!isLoading && topLosers.length === 0 && (
+            <div className="text-sm text-slate-400">אין נתונים כרגע</div>
+          )}
           {topLosers.map((stock, index) => (
             <motion.div
               key={stock.symbol}
@@ -82,7 +99,9 @@ export default function TopMovers() {
                 </div>
               </div>
               <div className="text-left">
-                <p className="text-white font-bold">${stock.price}</p>
+                <p className="text-white font-bold">
+                  {Number.isFinite(stock.price) ? `$${stock.price.toFixed(2)}` : '—'}
+                </p>
                 <Badge variant="danger">{stock.change}%</Badge>
               </div>
             </motion.div>

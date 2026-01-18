@@ -1,16 +1,21 @@
-export default function Badge({ children, variant = 'default', className = '' }) {
-  const variants = {
-    default: 'bg-gray-700 text-gray-300',
-    success: 'bg-green-500/20 text-green-400',
-    danger: 'bg-red-500/20 text-red-400',
-    warning: 'bg-yellow-500/20 text-yellow-400',
-    info: 'bg-blue-500/20 text-blue-400',
-    purple: 'bg-purple-500/20 text-purple-400'
-  };
-
+export default function Switch({ checked, onCheckedChange }) {
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
-      {children}
-    </span>
+    <button
+      type="button"
+      onClick={() => onCheckedChange(!checked)}
+      className={`
+        relative inline-flex h-6 w-11 items-center rounded-full
+        transition-colors duration-300
+        ${checked ? "bg-blue-600" : "bg-gray-500"}
+      `}
+    >
+      <span
+        className={`
+          inline-block h-4 w-4 rounded-full bg-white
+          transform transition-transform duration-300
+          ${checked ? "translate-x-6" : "translate-x-1"}
+        `}
+      />
+    </button>
   );
 }

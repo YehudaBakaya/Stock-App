@@ -8,7 +8,13 @@ const { sendTestMessage } = require('../services/telegramBot');
 router.get('/', auth, async (req, res) => {
   try {
     const settings = await TelegramSettings.findOne({ userId: req.user.id });
-    res.json(settings);
+    const publicToken = process.env.TELEGRAM_PUBLIC_TOKEN || '';
+    if (!settings) {
+      return res.json({ publicToken });
+    }
+    const payload = settings.toObject();
+    payload.publicToken = publicToken;
+    res.json(payload);
   } catch (err) {
     console.error('Get telegram settings error:', err);
     res.status(500).json({ message: 'שגיאת שרת' });
@@ -18,7 +24,17 @@ router.get('/', auth, async (req, res) => {
 // Save settings
 router.post('/', auth, async (req, res) => {
   try {
-    const { chatId, isActive, notifyPriceChange, notifyDailySummary, priceThreshold } = req.body;
+    const {
+      chatId,
+      botToken,
+      isActive,
+      notifyPriceChange,
+      notifyDailySummary,
+      notifyEntryAlerts,
+      priceThreshold,
+      entryChangeThreshold,
+      entryVolumeMultiplier
+    } = req.body;
 
     if (!chatId) {
       return res.status(400).json({ message: 'נא להזין Chat ID' });
@@ -29,10 +45,14 @@ router.post('/', auth, async (req, res) => {
       {
         userId: req.user.id,
         chatId,
+        botToken: botToken || '',
         isActive,
         notifyPriceChange,
         notifyDailySummary,
-        priceThreshold
+        priceThreshold,
+        notifyEntryAlerts,
+        entryChangeThreshold,
+        entryVolumeMultiplier
       },
       { upsert: true, new: true }
     );
@@ -53,11 +73,12 @@ router.post('/test', auth, async (req, res) => {
       return res.status(400).json({ message: 'לא הוגדר Chat ID' });
     }
 
-    await sendTestMessage(settings.chatId);
+    await sendTestMessage(settings.chatId, settings.botToken);
     res.json({ message: 'הודעת בדיקה נשלחה!' });
   } catch (err) {
     console.error('Test notification error:', err);
-    res.status(500).json({ message: 'שגיאה בשליחת ההודעה' });
+    const details = err.response?.body?.description || err.message || 'Unknown error';
+    res.status(500).json({ message: 'שגיאה בשליחת ההודעה', details });
   }
 });
 

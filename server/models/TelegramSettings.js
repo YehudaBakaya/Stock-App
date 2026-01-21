@@ -11,6 +11,10 @@ const telegramSettingsSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
+  botToken: {
+    type: String,
+    default: ''
+  },
   isActive: { 
     type: Boolean, 
     default: false 
@@ -23,11 +27,27 @@ const telegramSettingsSchema = new mongoose.Schema({
     type: Boolean, 
     default: true 
   },
+  notifyEntryAlerts: {
+    type: Boolean,
+    default: true
+  },
   priceThreshold: { 
     type: Number, 
     default: 5,
     min: 1,
     max: 50
+  },
+  entryChangeThreshold: {
+    type: Number,
+    default: 3,
+    min: 0.5,
+    max: 50
+  },
+  entryVolumeMultiplier: {
+    type: Number,
+    default: 2,
+    min: 1,
+    max: 10
   }
 }, {
   timestamps: true

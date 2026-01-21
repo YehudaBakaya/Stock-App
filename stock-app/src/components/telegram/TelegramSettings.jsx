@@ -8,6 +8,7 @@ import { sendTelegramTest } from '../../api/api';
 
 export default function TelegramSettings({ settings, onSave }) {
   const [chatId, setChatId] = useState(settings?.chatId || '');
+  const [botToken, setBotToken] = useState(settings?.botToken || '');
   const [isActive, setIsActive] = useState(settings?.isActive || false);
   const [notifyPriceChange, setNotifyPriceChange] = useState(settings?.notifyPriceChange ?? true);
   const [notifyDailySummary, setNotifyDailySummary] = useState(settings?.notifyDailySummary ?? true);
@@ -19,10 +20,13 @@ export default function TelegramSettings({ settings, onSave }) {
   const [testStatus, setTestStatus] = useState('');
   const [testError, setTestError] = useState('');
   const [isTesting, setIsTesting] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
+  const publicToken = settings?.publicToken || '';
 
   useEffect(() => {
     if (settings) {
       setChatId(settings.chatId || '');
+      setBotToken(settings.botToken || '');
       setIsActive(settings.isActive || false);
       setNotifyPriceChange(settings.notifyPriceChange ?? true);
       setNotifyDailySummary(settings.notifyDailySummary ?? true);
@@ -40,6 +44,7 @@ export default function TelegramSettings({ settings, onSave }) {
     }
     onSave({
       chatId,
+      botToken,
       isActive,
       notifyPriceChange,
       notifyDailySummary,
@@ -66,6 +71,20 @@ export default function TelegramSettings({ settings, onSave }) {
       setTestError(details ? `${message}: ${details}` : message);
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!publicToken) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(publicToken);
+      setCopyStatus('הועתק!');
+      setTimeout(() => setCopyStatus(''), 1500);
+    } catch {
+      setCopyStatus('נכשל');
+      setTimeout(() => setCopyStatus(''), 1500);
     }
   };
 
@@ -109,6 +128,34 @@ export default function TelegramSettings({ settings, onSave }) {
           </div>
         )}
 
+        {/* Public Token */}
+        <div className="p-4 rounded-xl border border-white/10 bg-white/5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-white font-medium">טוקן התראות ציבורי</p>
+              <p className="text-gray-500 text-sm">
+                שתף את הטוקן כדי לאפשר לאחרים להירשם להתראות.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCopyToken}
+              disabled={!publicToken}
+            >
+              {copyStatus || 'העתק'}
+            </Button>
+          </div>
+          <div className="mt-3">
+            <input
+              type="text"
+              readOnly
+              value={publicToken || 'הוסף TELEGRAM_PUBLIC_TOKEN בשרת'}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white/80"
+            />
+          </div>
+        </div>
+
         {/* Chat ID */}
         <div>
           <Input
@@ -120,6 +167,19 @@ export default function TelegramSettings({ settings, onSave }) {
           />
           <p className="text-gray-500 text-xs mt-2">
             טיפ: שלח /start לבוט שלך, או השתמש ב-@userinfobot כדי לקבל Chat ID.
+          </p>
+        </div>
+
+        {/* Bot Token */}
+        <div>
+          <Input
+            label="Telegram Bot Token"
+            placeholder="הדבק את הטוקן מבוטפאדר"
+            value={botToken}
+            onChange={(e) => setBotToken(e.target.value)}
+          />
+          <p className="text-gray-500 text-xs mt-2">
+            אם תוסיף טוקן משלך, ההתראות ישלחו מהבוט שלך.
           </p>
         </div>
 

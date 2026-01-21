@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const portfolioRoutes = require('./routes/portfolio');
 const stocksRoutes = require('./routes/stocks');
+const newsRoutes = require('./routes/news');
 const telegramRoutes = require('./routes/telegram');
 
 // Import telegram bot (starts polling)
@@ -15,16 +16,33 @@ require('./services/telegramBot');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
-  credentials: true
-}));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/stocks', stocksRoutes);
+app.use('/api/news', newsRoutes);
 app.use('/api/telegram', telegramRoutes);
 
 // Health check

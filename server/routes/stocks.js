@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const API_KEY = process.env.ALPHA_VANTAGE_KEY;
-const BASE_URL = 'https://www.alphavantage.co/query';
+const API_KEY = process.env.TWELVEDATA_API_KEY;
+const BASE_URL = 'https://api.twelvedata.com';
 
 // Cache for API responses (simple in-memory cache)
 const cache = new Map();
@@ -26,6 +26,7 @@ const setCache = (key, data) => {
 router.get('/quote/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
+    const { exchange } = req.query;
     const cacheKey = `quote-${symbol}`;
     
     // Check cache
@@ -34,18 +35,19 @@ router.get('/quote/:symbol', async (req, res) => {
       return res.json(cached);
     }
 
-    const response = await axios.get(BASE_URL, {
-      params: {
-        function: 'GLOBAL_QUOTE',
-        symbol: symbol.toUpperCase(),
-        apikey: API_KEY
-      }
-    });
+    const params = {
+      symbol: symbol.toUpperCase(),
+      apikey: API_KEY
+    };
+    if (exchange) {
+      params.exchange = exchange;
+    }
 
-    const quote = response.data['Global Quote'];
-    
-    if (!quote || Object.keys(quote).length === 0) {
-      // Return mock data if API fails
+    const response = await axios.get(`${BASE_URL}/quote`, { params });
+
+    const quote = response.data || {};
+
+    if (quote.status === 'error' || quote.code) {
       const mockData = {
         symbol: symbol.toUpperCase(),
         price: 100 + Math.random() * 100,
@@ -57,15 +59,15 @@ router.get('/quote/:symbol', async (req, res) => {
     }
 
     const data = {
-      symbol: quote['01. symbol'],
-      price: parseFloat(quote['05. price']),
-      change: parseFloat(quote['09. change']),
-      changePercent: parseFloat(quote['10. change percent']?.replace('%', '') || 0),
-      volume: parseInt(quote['06. volume']),
-      high: parseFloat(quote['03. high']),
-      low: parseFloat(quote['04. low']),
-      open: parseFloat(quote['02. open']),
-      previousClose: parseFloat(quote['08. previous close'])
+      symbol: (quote.symbol || symbol).toUpperCase(),
+      price: parseFloat(quote.price || 0),
+      change: parseFloat(quote.change || 0),
+      changePercent: parseFloat(quote.percent_change || 0),
+      volume: parseInt(quote.volume || 0),
+      high: parseFloat(quote.high || 0),
+      low: parseFloat(quote.low || 0),
+      open: parseFloat(quote.open || 0),
+      previousClose: parseFloat(quote.previous_close || 0)
     };
 
     setCache(cacheKey, data);
@@ -87,6 +89,7 @@ router.get('/quote/:symbol', async (req, res) => {
 router.get('/history/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
+    const { exchange } = req.query;
     const cacheKey = `history-${symbol}`;
     
     const cached = getCached(cacheKey);
@@ -94,32 +97,33 @@ router.get('/history/:symbol', async (req, res) => {
       return res.json(cached);
     }
 
-    const response = await axios.get(BASE_URL, {
-      params: {
-        function: 'TIME_SERIES_DAILY',
-        symbol: symbol.toUpperCase(),
-        outputsize: 'compact',
-        apikey: API_KEY
-      }
-    });
+    const params = {
+      symbol: symbol.toUpperCase(),
+      interval: '1day',
+      outputsize: 100,
+      apikey: API_KEY
+    };
+    if (exchange) {
+      params.exchange = exchange;
+    }
 
-    const timeSeries = response.data['Time Series (Daily)'];
+    const response = await axios.get(`${BASE_URL}/time_series`, { params });
+
+    const timeSeries = response.data || {};
     
-    if (!timeSeries) {
-      // Generate mock history
+    if (timeSeries.status === 'error' || !timeSeries.values) {
       const mockHistory = generateMockHistory(100, 100);
       return res.json(mockHistory);
     }
 
-    const history = Object.entries(timeSeries)
-      .slice(0, 100)
-      .map(([date, data]) => ({
-        date,
-        price: parseFloat(data['4. close']),
-        open: parseFloat(data['1. open']),
-        high: parseFloat(data['2. high']),
-        low: parseFloat(data['3. low']),
-        volume: parseInt(data['5. volume'])
+    const history = timeSeries.values
+      .map((item) => ({
+        date: item.datetime,
+        price: parseFloat(item.close),
+        open: parseFloat(item.open),
+        high: parseFloat(item.high),
+        low: parseFloat(item.low),
+        volume: parseInt(item.volume || 0)
       }))
       .reverse();
 
@@ -135,29 +139,45 @@ router.get('/history/:symbol', async (req, res) => {
 router.get('/movers', async (req, res) => {
   try {
     const cacheKey = 'movers';
-    
     const cached = getCached(cacheKey);
     if (cached) {
       return res.json(cached);
     }
 
-    const response = await axios.get(BASE_URL, {
-      params: {
-        function: 'TOP_GAINERS_LOSERS',
-        apikey: API_KEY
-      }
-    });
+    const symbols = [
+      'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA',
+      'META', 'NFLX', 'AMD', 'BABA', 'DIS', 'INTC'
+    ];
 
+    const quotes = await Promise.all(
+      symbols.map(async (symbol) => {
+        const response = await axios.get(`${BASE_URL}/quote`, {
+          params: {
+            symbol,
+            apikey: API_KEY
+          }
+        });
+        const quote = response.data || {};
+        return {
+          symbol,
+          name: symbol,
+          price: parseFloat(quote.price || 0),
+          change: parseFloat(quote.percent_change || 0)
+        };
+      })
+    );
+
+    const validQuotes = quotes.filter((item) => Number.isFinite(item.change) && Number.isFinite(item.price) && item.price > 0);
+    const sorted = validQuotes.sort((a, b) => b.change - a.change);
     const data = {
-      gainers: (response.data.top_gainers || []).slice(0, 5).map(formatMover),
-      losers: (response.data.top_losers || []).slice(0, 5).map(formatMover)
+      gainers: sorted.slice(0, 5),
+      losers: sorted.slice(-5).reverse()
     };
 
     setCache(cacheKey, data);
     res.json(data);
   } catch (err) {
     console.error('Get movers error:', err);
-    // Return mock movers
     res.json({
       gainers: [
         { symbol: 'NVDA', name: 'NVIDIA', price: 875.30, change: 8.45 },
@@ -182,21 +202,27 @@ router.get('/search', async (req, res) => {
       return res.json([]);
     }
 
-    const response = await axios.get(BASE_URL, {
+    const cacheKey = `search-${q.toLowerCase()}`;
+    const cached = getCached(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const response = await axios.get(`${BASE_URL}/symbol_search`, {
       params: {
-        function: 'SYMBOL_SEARCH',
-        keywords: q,
+        symbol: q,
         apikey: API_KEY
       }
     });
 
-    const matches = (response.data.bestMatches || []).slice(0, 10).map(match => ({
-      symbol: match['1. symbol'],
-      name: match['2. name'],
-      type: match['3. type'],
-      region: match['4. region']
+    const matches = (response.data.data || []).slice(0, 10).map(match => ({
+      symbol: match.symbol,
+      name: match.instrument_name,
+      type: match.instrument_type,
+      region: match.exchange
     }));
 
+    setCache(cacheKey, matches);
     res.json(matches);
   } catch (err) {
     console.error('Search error:', err);
@@ -205,15 +231,6 @@ router.get('/search', async (req, res) => {
 });
 
 // Helper functions
-function formatMover(item) {
-  return {
-    symbol: item.ticker,
-    name: item.ticker,
-    price: parseFloat(item.price),
-    change: parseFloat(item.change_percentage?.replace('%', '') || 0)
-  };
-}
-
 function generateMockHistory(basePrice, days) {
   const history = [];
   let price = basePrice;

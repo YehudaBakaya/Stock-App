@@ -13,4 +13,7 @@ export default defineConfig({
     port: 5173,       // הפורט הרצוי
     strictPort: true, // אם תפוס, השרת לא ינסה פורט אחר
   },
+  preview: {
+    allowedHosts: ['stock-app-1-fsk1.onrender.com'],
+  },
 })

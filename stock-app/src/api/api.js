@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    return `${origin}/api`;
+  }
+  return 'http://localhost:5001/api';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({ baseURL: API_URL });
 

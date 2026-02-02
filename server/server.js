@@ -19,10 +19,15 @@ require('./services/telegramBot');
 const app = express();
 
 // Middleware
-const allowedOrigins = [
+const defaultOrigins = [
   "http://localhost:5173",
-  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5173"
 ];
+const envOrigins = (process.env.CLIENT_URLS || '')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
 
 const corsOptions = {
   origin: (origin, callback) => {

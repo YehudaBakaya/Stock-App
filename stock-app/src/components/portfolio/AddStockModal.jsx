@@ -12,6 +12,7 @@ export default function AddStockModal({ onClose, onAdd }) {
   const [selectedStock, setSelectedStock] = useState(null);
   const [shares, setShares] = useState('');
   const [buyPrice, setBuyPrice] = useState('');
+  const [portfolioType, setPortfolioType] = useState('long');
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -74,7 +75,8 @@ export default function AddStockModal({ onClose, onAdd }) {
       symbol: selectedStock.symbol,
       shares: parseFloat(shares),
       buyPrice: parseFloat(buyPrice),
-      buyDate: new Date().toISOString().split('T')[0]
+      buyDate: new Date().toISOString().split('T')[0],
+      portfolioType
     });
     setIsLoading(false);
     onClose();
@@ -176,6 +178,30 @@ export default function AddStockModal({ onClose, onAdd }) {
 
                 {/* Form */}
                 <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPortfolioType('long')}
+                      className={`px-3 py-2 rounded-full border ${
+                        portfolioType === 'long'
+                          ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-200'
+                          : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      טווח ארוך
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPortfolioType('trade')}
+                      className={`px-3 py-2 rounded-full border ${
+                        portfolioType === 'trade'
+                          ? 'border-amber-300/50 bg-amber-400/10 text-amber-200'
+                          : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      טריידים
+                    </button>
+                  </div>
                   <Input
                     type="number"
                     label="כמות מניות"

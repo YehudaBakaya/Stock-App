@@ -10,7 +10,7 @@ export default function Badge({ children, variant = 'default', className = '' })
   };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium border border-white/10 ${variants[variant]} ${className}`}>
       {children}
     </span>
   );

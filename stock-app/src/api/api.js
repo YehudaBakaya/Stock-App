@@ -34,4 +34,11 @@ export const getTelegramSettings = () => api.get('/telegram');
 export const saveTelegramSettings = (data) => api.post('/telegram', data);
 export const sendTelegramTest = () => api.post('/telegram/test');
 
+// Trading Goals
+export const getTradingGoals = () => api.get('/trading-goals');
+export const saveTradingGoals = (data) => api.post('/trading-goals', data);
+
+export const getBrokerConnections = () => api.get('/brokers');
+export const saveBrokerConnection = (data) => api.post('/brokers', data);
+
 export default api;

@@ -33,7 +33,15 @@ router.post('/', auth, async (req, res) => {
       notifyEntryAlerts,
       priceThreshold,
       entryChangeThreshold,
-      entryVolumeMultiplier
+      entryVolumeMultiplier,
+      summaryDailyEnabled,
+      summaryWeeklyEnabled,
+      summaryMonthlyEnabled,
+      summaryDailyTime,
+      summaryWeeklyDay,
+      summaryWeeklyTime,
+      summaryMonthlyDay,
+      summaryMonthlyTime
     } = req.body;
 
     if (!chatId) {
@@ -52,7 +60,15 @@ router.post('/', auth, async (req, res) => {
         priceThreshold,
         notifyEntryAlerts,
         entryChangeThreshold,
-        entryVolumeMultiplier
+        entryVolumeMultiplier,
+        summaryDailyEnabled: !!summaryDailyEnabled,
+        summaryWeeklyEnabled: !!summaryWeeklyEnabled,
+        summaryMonthlyEnabled: !!summaryMonthlyEnabled,
+        summaryDailyTime: summaryDailyTime || '20:00',
+        summaryWeeklyDay: Number.isFinite(summaryWeeklyDay) ? summaryWeeklyDay : 5,
+        summaryWeeklyTime: summaryWeeklyTime || '20:00',
+        summaryMonthlyDay: Number.isFinite(summaryMonthlyDay) ? summaryMonthlyDay : 1,
+        summaryMonthlyTime: summaryMonthlyTime || '20:00'
       },
       { upsert: true, new: true }
     );
@@ -73,7 +89,7 @@ router.post('/test', auth, async (req, res) => {
       return res.status(400).json({ message: 'לא הוגדר Chat ID' });
     }
 
-    await sendTestMessage(settings.chatId, settings.botToken);
+    await sendTestMessage(settings.chatId, settings.botToken, settings.userId);
     res.json({ message: 'הודעת בדיקה נשלחה!' });
   } catch (err) {
     console.error('Test notification error:', err);

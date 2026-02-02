@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Target, TrendingUp, Calendar, Zap, DollarSign, Award, Rocket } from "lucide-react";
 import Card from "../components/ui/Card";
@@ -9,11 +9,15 @@ import Label from "../components/ui/Label";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Progress from "../components/ui/Progress"; // אם יש לך קומפוננטה
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getTradingGoals, saveTradingGoals } from "../api/api";
+import { useAuth } from "../context/AuthContext";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 
 export default function TradingGoals() {
-  const [currentCapital, setCurrentCapital] = useState(10000);
+  const { user } = useAuth();
+  const [baseCapital, setBaseCapital] = useState(10000);
   const [targetCapital, setTargetCapital] = useState(50000);
   const [weeklyReturn, setWeeklyReturn] = useState(5);
   const [projectionData, setProjectionData] = useState([]);
@@ -26,54 +30,147 @@ export default function TradingGoals() {
   const [profitModalValue, setProfitModalValue] = useState("");
   const [profitModalDay, setProfitModalDay] = useState(1);
   const [profitModalWeek, setProfitModalWeek] = useState(1);
+  const now = new Date();
+  const hasLoadedRef = useRef(false);
+  const saveTimerRef = useRef(null);
+  const queryClient = useQueryClient();
+
+  const { data: tradingGoalsData, isFetched: tradingGoalsFetched } = useQuery({
+    queryKey: ["tradingGoals", user?.id],
+    queryFn: async () => {
+      const res = await getTradingGoals();
+      return res.data;
+    },
+    enabled: !!user
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: saveTradingGoals,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["tradingGoals"]);
+    }
+  });
+
+  useEffect(() => {
+    hasLoadedRef.current = false;
+    if (!user) {
+      return;
+    }
+    setBaseCapital(10000);
+    setTargetCapital(50000);
+    setWeeklyReturn(5);
+    setCalendarView("day");
+    setActiveMonth(new Date());
+    setProfitEntries({ days: {}, weeks: {}, months: {} });
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (hasLoadedRef.current) {
+      return;
+    }
+    if (!tradingGoalsFetched) {
+      return;
+    }
+    if (tradingGoalsData) {
+      if (typeof tradingGoalsData.baseCapital === "number") {
+        setBaseCapital(tradingGoalsData.baseCapital);
+      }
+      if (typeof tradingGoalsData.targetCapital === "number") {
+        setTargetCapital(tradingGoalsData.targetCapital);
+      }
+      if (typeof tradingGoalsData.weeklyReturn === "number") {
+        setWeeklyReturn(tradingGoalsData.weeklyReturn);
+      }
+      if (typeof tradingGoalsData.calendarView === "string") {
+        setCalendarView(tradingGoalsData.calendarView);
+      }
+      if (tradingGoalsData.activeMonth) {
+        setActiveMonth(new Date(tradingGoalsData.activeMonth));
+      }
+      if (tradingGoalsData.profitEntries && typeof tradingGoalsData.profitEntries === "object") {
+        setProfitEntries({
+          days: tradingGoalsData.profitEntries.days || {},
+          weeks: tradingGoalsData.profitEntries.weeks || {},
+          months: tradingGoalsData.profitEntries.months || {},
+        });
+      }
+    }
+    hasLoadedRef.current = true;
+  }, [tradingGoalsData, tradingGoalsFetched]);
+
+  const buildPayload = (overrides = {}) => ({
+    baseCapital,
+    targetCapital,
+    weeklyReturn,
+    calendarView,
+    activeMonth: activeMonth.toISOString(),
+    profitEntries,
+    ...overrides
+  });
+
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      return;
+    }
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      saveMutation.mutate(buildPayload());
+    }, 600);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [baseCapital, targetCapital, weeklyReturn, calendarView, activeMonth, profitEntries]);
+
+  const totalProfitOverall = (() => {
+    const monthMap = new Map();
+
+    Object.entries(profitEntries.days).forEach(([dayKey, value]) => {
+      const monthKey = dayKey.slice(0, 7);
+      const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+      entry.days += Number(value) || 0;
+      monthMap.set(monthKey, entry);
+    });
+
+    Object.entries(profitEntries.weeks).forEach(([weekKey, value]) => {
+      const parts = weekKey.split("-");
+      const monthKey = `${parts[0]}-${parts[1]}`;
+      const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+      entry.weeks += Number(value) || 0;
+      entry.hasWeeks = true;
+      monthMap.set(monthKey, entry);
+    });
+
+    let total = 0;
+    const monthOverrides = profitEntries.months || {};
+    const allMonths = new Set([
+      ...Object.keys(monthOverrides),
+      ...monthMap.keys()
+    ]);
+
+    allMonths.forEach((monthKey) => {
+      if (typeof monthOverrides[monthKey] === "number") {
+        total += monthOverrides[monthKey];
+        return;
+      }
+      const entry = monthMap.get(monthKey);
+      if (!entry) {
+        return;
+      }
+      if (entry.hasWeeks) {
+        total += entry.weeks;
+      } else {
+        total += entry.days;
+      }
+    });
+
+    return total;
+  })();
+
+  const currentCapital = Math.max(baseCapital + totalProfitOverall, 0);
 
   useEffect(() => {
     calculateProjection();
   }, [currentCapital, targetCapital, weeklyReturn]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("tradingGoals");
-    if (!saved) {
-      return;
-    }
-    try {
-      const parsed = JSON.parse(saved);
-      if (typeof parsed.currentCapital === "number") {
-        setCurrentCapital(parsed.currentCapital);
-      }
-      if (typeof parsed.targetCapital === "number") {
-        setTargetCapital(parsed.targetCapital);
-      }
-      if (typeof parsed.weeklyReturn === "number") {
-        setWeeklyReturn(parsed.weeklyReturn);
-      }
-      if (typeof parsed.calendarView === "string") {
-        setCalendarView(parsed.calendarView);
-      }
-      if (parsed.profitEntries && typeof parsed.profitEntries === "object") {
-        setProfitEntries({
-          days: parsed.profitEntries.days || {},
-          weeks: parsed.profitEntries.weeks || {},
-          months: parsed.profitEntries.months || {},
-        });
-      }
-    } catch {
-      localStorage.removeItem("tradingGoals");
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "tradingGoals",
-      JSON.stringify({
-        currentCapital,
-        targetCapital,
-        weeklyReturn,
-        calendarView,
-        profitEntries,
-      })
-    );
-  }, [currentCapital, targetCapital, weeklyReturn, calendarView, profitEntries]);
 
   const calculateProjection = () => {
     if (weeklyReturn <= 0 || currentCapital <= 0 || targetCapital <= currentCapital) {
@@ -143,13 +240,6 @@ export default function TradingGoals() {
     };
   });
 
-  const monthTotalComputed = dailyResults.reduce((acc, item) => acc + item.profit, 0);
-  const monthOverride = profitEntries.months[monthKey];
-  const monthTotal = typeof monthOverride === "number" ? monthOverride : monthTotalComputed;
-  const winningDays = dailyResults.filter((item) => item.profit > 0).length;
-  const losingDays = dailyResults.filter((item) => item.profit < 0).length;
-  const averageDaily = daysInMonth > 0 ? monthTotal / daysInMonth : 0;
-
   const weeklyResults = [];
   let weekProfit = 0;
   dailyResults.forEach((item, index) => {
@@ -166,10 +256,20 @@ export default function TradingGoals() {
     }
   });
 
+  const monthTotalComputed = weeklyResults.reduce((acc, week) => acc + week.profit, 0);
+  const monthOverride = profitEntries.months[monthKey];
+  const monthTotal = typeof monthOverride === "number" ? monthOverride : monthTotalComputed;
+  const winningDays = dailyResults.filter((item) => item.profit > 0).length;
+  const losingDays = dailyResults.filter((item) => item.profit < 0).length;
+  const averageDaily = daysInMonth > 0 ? monthTotal / daysInMonth : 0;
+
   const openProfitModal = (mode, details = {}) => {
     setProfitModalMode(mode);
     if (mode === "day") {
-      const day = details.day || 1;
+      const defaultDay = activeMonth.getMonth() === now.getMonth() && activeMonth.getFullYear() === now.getFullYear()
+        ? now.getDate()
+        : 1;
+      const day = details.day || defaultDay;
       setProfitModalDay(day);
       const stored = profitEntries.days[getDayKey(day)];
       setProfitModalValue(typeof stored === "number" ? stored : "");
@@ -187,30 +287,57 @@ export default function TradingGoals() {
     setIsProfitModalOpen(true);
   };
 
+  const handleProfitDelete = () => {
+    const nextEntries = (() => {
+      if (profitModalMode === "day") {
+        const nextDays = { ...profitEntries.days };
+        delete nextDays[getDayKey(profitModalDay)];
+        return { ...profitEntries, days: nextDays };
+      }
+      if (profitModalMode === "week") {
+        const nextWeeks = { ...profitEntries.weeks };
+        delete nextWeeks[getWeekKey(profitModalWeek)];
+        return { ...profitEntries, weeks: nextWeeks };
+      }
+      const nextMonths = { ...profitEntries.months };
+      delete nextMonths[monthKey];
+      return { ...profitEntries, months: nextMonths };
+    })();
+    setProfitEntries(nextEntries);
+    if (hasLoadedRef.current) {
+      saveMutation.mutate(buildPayload({ profitEntries: nextEntries }));
+    }
+    setIsProfitModalOpen(false);
+  };
+
   const handleProfitSave = () => {
     const parsedValue = parseFloat(profitModalValue);
     if (Number.isNaN(parsedValue)) {
       setIsProfitModalOpen(false);
       return;
     }
-    setProfitEntries((prev) => {
+    const nextEntries = (() => {
       if (profitModalMode === "day") {
         return {
-          ...prev,
-          days: { ...prev.days, [getDayKey(profitModalDay)]: parsedValue },
+          ...profitEntries,
+          days: { ...profitEntries.days, [getDayKey(profitModalDay)]: parsedValue },
         };
       }
       if (profitModalMode === "week") {
         return {
-          ...prev,
-          weeks: { ...prev.weeks, [getWeekKey(profitModalWeek)]: parsedValue },
+          ...profitEntries,
+          weeks: { ...profitEntries.weeks, [getWeekKey(profitModalWeek)]: parsedValue },
         };
       }
       return {
-        ...prev,
-        months: { ...prev.months, [monthKey]: parsedValue },
+        ...profitEntries,
+        months: { ...profitEntries.months, [monthKey]: parsedValue },
       };
-    });
+    })();
+    setProfitEntries(nextEntries);
+    if (hasLoadedRef.current) {
+      saveMutation.mutate(buildPayload({ profitEntries: nextEntries }));
+    }
     setIsProfitModalOpen(false);
   };
 
@@ -225,6 +352,12 @@ export default function TradingGoals() {
       );
     }
     return null;
+  };
+
+  const monthLabel = activeMonth.toLocaleString("he-IL", { month: "long", year: "numeric" });
+  const goToMonth = (offset) => {
+    const next = new Date(activeMonth.getFullYear(), activeMonth.getMonth() + offset, 1);
+    setActiveMonth(next);
   };
 
   return (
@@ -268,11 +401,14 @@ export default function TradingGoals() {
                     <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
                       type="number"
-                      value={currentCapital}
-                      onChange={(e) => setCurrentCapital(parseFloat(e.target.value) || 0)}
+                      value={baseCapital}
+                      onChange={(e) => setBaseCapital(parseFloat(e.target.value) || 0)}
                       className="pr-10 text-xl font-bold"
                     />
                   </div>
+                  <p className="text-xs text-slate-400 mt-2">
+                    הון לאחר רווחים: {formatCurrency(currentCapital)}
+                  </p>
                 </div>
 
                 <div>
@@ -469,6 +605,12 @@ export default function TradingGoals() {
                     {winningDays}/{daysInMonth} ימים ירוקים · {losingDays} אדומים · ממוצע יומי {formatSignedCurrency(averageDaily)}
                   </p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => goToMonth(-1)}>הקודם</Button>
+                  <span className="text-sm text-slate-200 font-semibold">{monthLabel}</span>
+                  <Button size="sm" variant="outline" onClick={() => goToMonth(1)}>הבא</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setActiveMonth(new Date())}>היום</Button>
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {["day", "week", "month"].map((view) => (
                     <Button
@@ -476,10 +618,7 @@ export default function TradingGoals() {
                       size="sm"
                       variant={calendarView === view ? "primary" : "outline"}
                       className="rounded-full px-4 py-1.5 text-sm"
-                      onClick={() => {
-                        setCalendarView(view);
-                        openProfitModal(view);
-                      }}
+                      onClick={() => setCalendarView(view)}
                     >
                       {view === "day" ? "יום" : view === "week" ? "שבוע" : "חודש"}
                     </Button>
@@ -637,6 +776,7 @@ export default function TradingGoals() {
                         max={daysInMonth}
                         onChange={(event) => setProfitModalDay(parseInt(event.target.value, 10) || 1)}
                       />
+                      <p className="text-xs text-slate-500 mt-2">{monthLabel}</p>
                     </div>
                   )}
 
@@ -666,7 +806,12 @@ export default function TradingGoals() {
                     <Button variant="ghost" onClick={() => setIsProfitModalOpen(false)}>
                       ביטול
                     </Button>
-                    <Button onClick={handleProfitSave}>שמירה</Button>
+                    {profitModalValue !== "" && (
+                    <Button variant="outline" onClick={handleProfitDelete}>
+                        🗑️ מחק ערך
+                      </Button>
+                    )}
+                    <Button onClick={handleProfitSave}>✏️ שמירה</Button>
                   </div>
                 </div>
               </Card>

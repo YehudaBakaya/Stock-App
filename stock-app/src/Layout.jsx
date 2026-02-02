@@ -1,10 +1,13 @@
   import { useEffect, useState } from 'react';
   import { Link, useLocation } from 'react-router-dom';
-  import { useAuth } from './context/AuthContext';
   import { useTranslation } from 'react-i18next';
+  import { useAuth } from './context/AuthContext';
+  import { useTheme } from './components/Profile/ThemeProvider';
+  import Switch from './components/ui/Switch';
   import { 
     BarChart3, 
-    TrendingUp, 
+    TrendingUp,
+    LineChart,
     Briefcase, 
     User,
     Bell,
@@ -18,6 +21,7 @@
     const location = useLocation();
     const { user, logout } = useAuth();
     const { t, i18n } = useTranslation();
+    const { theme, toggleTheme } = useTheme();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -29,6 +33,7 @@
   const navigationItems = [
   { title: t('nav.dashboard'), url: '/', icon: BarChart3 },
   { title: t('nav.stocks'), url: '/Stocks', icon: TrendingUp },
+  { title: 'ניתוח מניות', url: '/analysis', icon: LineChart },
   { title: t('nav.trading'), url: '/trading', icon: Zap },
   { title: t('nav.portfolio'), url: '/Portfolio', icon: Briefcase },
   { title: t('nav.profile'), url: '/profile', icon: User },
@@ -70,6 +75,7 @@
               <button 
                 className="md:hidden text-slate-400"
                 onClick={() => setSidebarOpen(false)}
+                aria-label="סגור תפריט"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -98,7 +104,7 @@
           </nav>
 
           {/* User */}
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-white/10 space-y-3">
             <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-amber-300 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold">
@@ -112,9 +118,16 @@
               <button 
                 onClick={logout}
                 className="text-slate-400 hover:text-red-400 transition-colors"
+                aria-label="התנתק"
               >
                 <LogOut className="w-5 h-5" />
               </button>
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl">
+              <span className="text-xs text-slate-300">
+                {i18n.language === 'he' ? 'רקע בהיר' : 'Light background'}
+              </span>
+              <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
             </div>
           </div>
         </aside>
@@ -125,7 +138,7 @@
           <header className="md:hidden bg-[#0f1722]/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 sticky top-0 z-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button onClick={() => setSidebarOpen(true)}>
+                <button onClick={() => setSidebarOpen(true)} aria-label="פתח תפריט">
                   <Menu className="w-6 h-6 text-white" />
                 </button>
                 <div className="flex items-center gap-2">
@@ -135,7 +148,7 @@
                   </span>
                 </div>
               </div>
-              <button className="relative">
+              <button className="relative" aria-label="התראות">
                 <Bell className="w-5 h-5 text-slate-300" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full text-[10px] flex items-center justify-center text-black font-bold">
                   3

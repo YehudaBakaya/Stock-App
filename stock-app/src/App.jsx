@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './components/Profile/ThemeProvider';
 
 import Layout from './Layout';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +11,7 @@ import Stocks from './pages/Stocks';
 import Profile from './pages/Profile';
 import TradingGoals from './pages/Trading Goals';
 import Portfolio from "./pages/Portfolio"
+import StockAnalysis from './pages/StockAnalysis';
 
 const queryClient = new QueryClient();
 
@@ -26,57 +28,58 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+              {/* Protected routes */}
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Dashboard />
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/Stocks"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Stocks />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/Stocks"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Stocks />
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/portfolio"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Portfolio />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/portfolio"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Portfolio />
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Profile />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Profile />
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
 
             <Route
               path="/trading"
@@ -88,9 +91,21 @@ export default function App() {
                 </PrivateRoute>
               }
             />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+
+            <Route
+              path="/analysis"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <StockAnalysis />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

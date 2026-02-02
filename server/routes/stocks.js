@@ -89,29 +89,44 @@ router.get('/quote/:symbol', async (req, res) => {
 router.get('/history/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { exchange } = req.query;
-    const cacheKey = `history-${symbol}`;
+    const { exchange, outputsize, interval, allowMock } = req.query;
+    const parsedOutputsize = Math.min(Math.max(parseInt(outputsize || 100, 10), 30), 400);
+    const allowedIntervals = new Set(['1h', '1day', '1week', '1month']);
+    const resolvedInterval = allowedIntervals.has(interval) ? interval : '1day';
+    const cacheKey = `history-${symbol}-${resolvedInterval}-${parsedOutputsize}`;
     
     const cached = getCached(cacheKey);
     if (cached) {
       return res.json(cached);
     }
 
+    const symbolUpper = symbol.toUpperCase();
     const params = {
-      symbol: symbol.toUpperCase(),
-      interval: '1day',
-      outputsize: 100,
+      symbol: symbolUpper,
+      interval: resolvedInterval,
+      outputsize: parsedOutputsize,
       apikey: API_KEY
     };
     if (exchange) {
       params.exchange = exchange;
     }
 
-    const response = await axios.get(`${BASE_URL}/time_series`, { params });
+    let response = await axios.get(`${BASE_URL}/time_series`, { params });
+    let timeSeries = response.data || {};
 
-    const timeSeries = response.data || {};
-    
+    if ((timeSeries.status === 'error' || !timeSeries.values) && symbolUpper === 'GOOG') {
+      response = await axios.get(`${BASE_URL}/time_series`, {
+        params: { ...params, symbol: 'GOOGL' }
+      });
+      timeSeries = response.data || {};
+    }
+
     if (timeSeries.status === 'error' || !timeSeries.values) {
+      if (allowMock === '0') {
+        return res.status(502).json({
+          message: timeSeries.message || timeSeries.code || 'History data unavailable'
+        });
+      }
       const mockHistory = generateMockHistory(100, 100);
       return res.json(mockHistory);
     }
@@ -131,6 +146,13 @@ router.get('/history/:symbol', async (req, res) => {
     res.json(history);
   } catch (err) {
     console.error('Get history error:', err);
+    if (req.query.allowMock === '0') {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.code ||
+        'History data unavailable';
+      return res.status(502).json({ message });
+    }
     res.json(generateMockHistory(100, 100));
   }
 });
@@ -239,11 +261,18 @@ function generateMockHistory(basePrice, days) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const change = (Math.random() - 0.48) * (basePrice * 0.03);
-    price = Math.max(price + change, basePrice * 0.7);
-    
+    const open = price;
+    const close = Math.max(price + change, basePrice * 0.7);
+    const high = Math.max(open, close) + Math.random() * (basePrice * 0.01);
+    const low = Math.min(open, close) - Math.random() * (basePrice * 0.01);
+    price = close;
+
     history.push({
       date: date.toISOString().split('T')[0],
-      price: parseFloat(price.toFixed(2)),
+      price: parseFloat(close.toFixed(2)),
+      open: parseFloat(open.toFixed(2)),
+      high: parseFloat(high.toFixed(2)),
+      low: parseFloat(low.toFixed(2)),
       volume: Math.floor(Math.random() * 10000000)
     });
   }

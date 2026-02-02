@@ -26,6 +26,12 @@ const holdingSchema = new mongoose.Schema({
   buyDate: { 
     type: Date, 
     default: Date.now 
+  },
+  portfolioType: {
+    type: String,
+    enum: ['long', 'trade'],
+    default: 'long',
+    index: true
   }
 }, {
   timestamps: true

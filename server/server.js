@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -9,6 +10,8 @@ const portfolioRoutes = require('./routes/portfolio');
 const stocksRoutes = require('./routes/stocks');
 const newsRoutes = require('./routes/news');
 const telegramRoutes = require('./routes/telegram');
+const tradingGoalsRoutes = require('./routes/tradingGoals');
+const brokersRoutes = require('./routes/brokers');
 
 // Import telegram bot (starts polling)
 require('./services/telegramBot');
@@ -44,6 +47,8 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/stocks', stocksRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/trading-goals', tradingGoalsRoutes);
+app.use('/api/brokers', brokersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

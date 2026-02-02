@@ -48,6 +48,51 @@ const telegramSettingsSchema = new mongoose.Schema({
     default: 2,
     min: 1,
     max: 10
+  },
+  summaryDailyEnabled: {
+    type: Boolean,
+    default: false
+  },
+  summaryWeeklyEnabled: {
+    type: Boolean,
+    default: false
+  },
+  summaryMonthlyEnabled: {
+    type: Boolean,
+    default: false
+  },
+  summaryDailyTime: {
+    type: String,
+    default: '20:00'
+  },
+  summaryWeeklyDay: {
+    type: Number,
+    default: 5,
+    min: 0,
+    max: 6
+  },
+  summaryWeeklyTime: {
+    type: String,
+    default: '20:00'
+  },
+  summaryMonthlyDay: {
+    type: Number,
+    default: 1,
+    min: 1,
+    max: 28
+  },
+  summaryMonthlyTime: {
+    type: String,
+    default: '20:00'
+  },
+  lastDailySentAt: {
+    type: Date
+  },
+  lastWeeklySentAt: {
+    type: Date
+  },
+  lastMonthlySentAt: {
+    type: Date
   }
 }, {
   timestamps: true

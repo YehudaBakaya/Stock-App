@@ -37,7 +37,7 @@ router.get('/:id', auth, async (req, res) => {
 // Add holding
 router.post('/', auth, async (req, res) => {
   try {
-    const { symbol, shares, buyPrice, buyDate } = req.body;
+    const { symbol, shares, buyPrice, buyDate, portfolioType } = req.body;
 
     // Validation
     if (!symbol || !shares || !buyPrice) {
@@ -53,7 +53,8 @@ router.post('/', auth, async (req, res) => {
       symbol: symbol.toUpperCase().trim(),
       shares: parseFloat(shares),
       buyPrice: parseFloat(buyPrice),
-      buyDate: buyDate ? new Date(buyDate) : new Date()
+      buyDate: buyDate ? new Date(buyDate) : new Date(),
+      portfolioType: portfolioType === 'trade' ? 'trade' : 'long'
     });
 
     await holding.save();
@@ -67,14 +68,15 @@ router.post('/', auth, async (req, res) => {
 // Update holding
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { shares, buyPrice, buyDate } = req.body;
+    const { shares, buyPrice, buyDate, portfolioType } = req.body;
 
     const holding = await Holding.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       { 
         shares: parseFloat(shares),
         buyPrice: parseFloat(buyPrice),
-        buyDate: buyDate ? new Date(buyDate) : undefined
+        buyDate: buyDate ? new Date(buyDate) : undefined,
+        ...(portfolioType ? { portfolioType: portfolioType === 'trade' ? 'trade' : 'long' } : {})
       },
       { new: true }
     );

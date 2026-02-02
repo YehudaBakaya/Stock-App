@@ -11,6 +11,8 @@ import AddStockModal from '../components/portfolio/AddStockModal';
 import MarketNews from '../components/market/MarketNews';
 import TopMovers from '../components/market/TopMovers';
 import TelegramSettings from '../components/telegram/TelegramSettings';
+import BrokerConnections from '../components/portfolio/BrokerConnections';
+import InstallPrompt from '../components/ui/InstallPrompt';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [selectedChart, setSelectedChart] = useState(null);
   const [showTelegramSettings, setShowTelegramSettings] = useState(false);
   const [stockPrices, setStockPrices] = useState({});
+  const [portfolioFilter, setPortfolioFilter] = useState('all');
 
   // Fetch holdings
   const { data: holdings = [], isLoading, refetch } = useQuery({
@@ -64,6 +67,7 @@ export default function Dashboard() {
     }
   });
 
+
   // Fetch stock prices
   useEffect(() => {
     const fetchPrices = async () => {
@@ -103,6 +107,33 @@ export default function Dashboard() {
 
   const totalPnL = totalValue - totalCost;
   const totalPnLPercent = totalCost > 0 ? ((totalPnL / totalCost) * 100) : 0;
+
+  const filteredHoldings = holdings.filter((holding) => {
+    if (portfolioFilter === 'all') return true;
+    return holding.portfolioType === portfolioFilter;
+  });
+
+  const filteredValue = filteredHoldings.reduce((sum, holding) => {
+    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+    return sum + (holding.shares * price);
+  }, 0);
+
+  const topHoldings = [...filteredHoldings]
+    .map((holding) => {
+      const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+      return {
+        symbol: holding.symbol,
+        value: holding.shares * price
+      };
+    })
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3);
+
+  const dailyPnL = filteredHoldings.reduce((sum, holding) => {
+    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+    const change = stockPrices[holding.symbol]?.change || 0;
+    return sum + (holding.shares * price * (change / 100));
+  }, 0);
 
   return (
     <div className="min-h-screen app-bg p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
@@ -201,7 +232,106 @@ export default function Dashboard() {
           )}
         </AnimatePresence>
 
+        <InstallPrompt />
+
+        {/* Portfolio Filters + Quick Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">סינון תיק</p>
+                <div className="flex items-center gap-2 mt-2">
+                  {[
+                    { id: 'all', label: 'הכל' },
+                    { id: 'long', label: 'טווח ארוך' },
+                    { id: 'trade', label: 'טריידים' }
+                  ].map((item) => (
+                    <Button
+                      key={item.id}
+                      size="sm"
+                      variant={portfolioFilter === item.id ? 'primary' : 'outline'}
+                      onClick={() => setPortfolioFilter(item.id)}
+                      className="rounded-full"
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-xs text-slate-400">שווי מסונן</p>
+                <p className="text-lg font-bold text-white">${filteredValue.toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">סטטוס תיק</p>
+                <p className="text-2xl font-black text-white">{filteredHoldings.length}</p>
+                <p className="text-xs text-slate-500">מספר אחזקות מסונן</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-xs text-slate-400">שווי מסונן</p>
+                <p className="text-lg font-bold text-white">${filteredValue.toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">ריכוזיות</p>
+                {topHoldings.length === 0 && (
+                  <p className="text-slate-500 text-sm">אין נתונים</p>
+                )}
+                {topHoldings.length > 0 && (
+                  <div className="space-y-1 text-sm">
+                    {topHoldings.map((item) => (
+                      <div key={item.symbol} className="flex items-center justify-between text-slate-200">
+                        <span>{item.symbol}</span>
+                        <span className="text-slate-400">${item.value.toFixed(0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-xs text-slate-400">Top 3</p>
+                <p className="text-lg font-bold text-white">{topHoldings.length}</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
         {/* Main Content Grid */}
+        {holdings.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.16 }}
+          >
+            <Card>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3 className="text-white font-bold text-lg">אין עדיין נתונים בתיק</h3>
+                  <p className="text-slate-400 text-sm">הוסף מניה או התחבר לברוקר כדי להתחיל</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button onClick={() => setShowAddModal(true)}>
+                    הוסף מניה
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -209,7 +339,7 @@ export default function Dashboard() {
             transition={{ delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <PortfolioPieChart holdings={holdings} stockPrices={stockPrices} />
+            <PortfolioPieChart holdings={filteredHoldings} stockPrices={stockPrices} />
           </motion.div>
 
           <motion.div
@@ -228,7 +358,7 @@ export default function Dashboard() {
           transition={{ delay: 0.4 }}
         >
           <HoldingsList
-            holdings={holdings}
+            holdings={filteredHoldings}
             stockPrices={stockPrices}
             onDelete={(id) => deleteMutation.mutate(id)}
             onShowChart={(symbol, price, change) => setSelectedChart({ symbol, price, change })}
@@ -243,6 +373,15 @@ export default function Dashboard() {
         >
           <TopMovers />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <BrokerConnections />
+        </motion.div>
+
 
         {/* Modals */}
         <AnimatePresence>

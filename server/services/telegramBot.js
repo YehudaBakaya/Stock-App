@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const axios = require('axios');
 const TelegramSettings = require('../models/TelegramSettings');
 const Holding = require('../models/Holding');
+const TradingGoals = require('../models/TradingGoals');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const TWELVE_API_KEY = process.env.TWELVEDATA_API_KEY;
@@ -126,12 +127,16 @@ ${emoji} רווח/הפסד: ${portfolioData.pnl >= 0 ? '+' : ''}$${portfolioData
 };
 
 // Send test message
-const sendTestMessage = async (chatId, botToken) => {
+const sendTestMessage = async (chatId, botToken, userId) => {
+  if (userId) {
+    await sendPortfolioSummary({ chatId, botToken, userId }, 'בדיקה');
+    return;
+  }
   const client = getBotForToken(botToken);
   if (!client) {
     throw new Error('Telegram bot not configured');
   }
-  
+
   const message = `
 ✅ <b>הודעת בדיקה</b>
 
@@ -140,7 +145,7 @@ const sendTestMessage = async (chatId, botToken) => {
 
 ⏰ ${new Date().toLocaleString('he-IL')}
   `;
-  
+
   await client.sendMessage(chatId, message, { parse_mode: 'HTML' });
 };
 
@@ -160,6 +165,169 @@ Volume: ${payload.volume.toLocaleString()} (${payload.volumeMultiplier.toFixed(2
   `;
 
   await client.sendMessage(chatId, message, { parse_mode: 'HTML' });
+};
+
+const getZonedParts = (date, timeZone) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    weekday: 'short'
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    weekday: map.weekday
+  };
+};
+
+const weekdayToNumber = (weekday) => {
+  const map = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6
+  };
+  return map[weekday];
+};
+
+const isSameDay = (a, b) => (
+  a.year === b.year && a.month === b.month && a.day === b.day
+);
+
+const isSameMonth = (a, b) => (
+  a.year === b.year && a.month === b.month
+);
+
+const isSameWeek = (a, b) => {
+  const dateA = new Date(a.year, a.month - 1, a.day);
+  const dateB = new Date(b.year, b.month - 1, b.day);
+  const diff = Math.abs(dateA - dateB);
+  return diff < 7 * 24 * 60 * 60 * 1000;
+};
+
+const parseTime = (time) => {
+  const [hour, minute] = String(time || '20:00').split(':').map((part) => parseInt(part, 10));
+  return {
+    hour: Number.isFinite(hour) ? hour : 20,
+    minute: Number.isFinite(minute) ? minute : 0
+  };
+};
+
+const calculateTradeCapital = (goals) => {
+  if (!goals) return 0;
+  const baseCapital = Number.isFinite(goals.baseCapital) ? goals.baseCapital : 0;
+  const entries = goals.profitEntries || {};
+  const days = entries.days || {};
+  const weeks = entries.weeks || {};
+  const months = entries.months || {};
+
+  const monthMap = new Map();
+  Object.entries(days).forEach(([dayKey, value]) => {
+    const monthKey = dayKey.slice(0, 7);
+    const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+    entry.days += Number(value) || 0;
+    monthMap.set(monthKey, entry);
+  });
+
+  Object.entries(weeks).forEach(([weekKey, value]) => {
+    const parts = weekKey.split('-');
+    const monthKey = `${parts[0]}-${parts[1]}`;
+    const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+    entry.weeks += Number(value) || 0;
+    entry.hasWeeks = true;
+    monthMap.set(monthKey, entry);
+  });
+
+  let total = 0;
+  const allMonths = new Set([
+    ...Object.keys(months),
+    ...monthMap.keys()
+  ]);
+  allMonths.forEach((monthKey) => {
+    if (typeof months[monthKey] === 'number') {
+      total += months[monthKey];
+      return;
+    }
+    const entry = monthMap.get(monthKey);
+    if (!entry) return;
+    total += entry.hasWeeks ? entry.weeks : entry.days;
+  });
+
+  return Math.max(baseCapital + total, 0);
+};
+
+const formatCurrency = (value) => `$${Number(value || 0).toLocaleString()}`;
+
+const sendPortfolioSummary = async (settings, frequencyLabel) => {
+  const client = getBotForToken(settings.botToken);
+  if (!client) return;
+
+  const holdings = await Holding.find({ userId: settings.userId }).lean();
+  const goals = await TradingGoals.findOne({ userId: settings.userId }).lean();
+
+  const uniqueSymbols = [...new Set(holdings.map((holding) => holding.symbol))];
+  const quotes = {};
+  for (const symbol of uniqueSymbols) {
+    try {
+      const quote = await fetchQuote(symbol);
+      const price = parseFloat(quote.price || 0);
+      if (Number.isFinite(price) && price > 0) {
+        quotes[symbol] = price;
+      }
+    } catch (err) {
+      continue;
+    }
+  }
+
+  const calcTotals = (filterFn) => {
+    let value = 0;
+    let cost = 0;
+    holdings.filter(filterFn).forEach((holding) => {
+      const price = quotes[holding.symbol] || holding.buyPrice;
+      value += holding.shares * price;
+      cost += holding.shares * holding.buyPrice;
+    });
+    const pnl = value - cost;
+    const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+    return { value, pnl, pnlPercent };
+  };
+
+  const longTotals = calcTotals((holding) => holding.portfolioType !== 'trade');
+  const tradeHoldingsTotals = calcTotals((holding) => holding.portfolioType === 'trade');
+  const tradeCapital = goals ? calculateTradeCapital(goals) : tradeHoldingsTotals.value;
+  const tradeWeeklyReturn = Number.isFinite(goals?.weeklyReturn) ? goals.weeklyReturn : 0;
+  const totalEquity = longTotals.value + tradeHoldingsTotals.value + tradeCapital;
+
+  const message = `
+📊 <b>סיכום תיק (${frequencyLabel})</b>
+
+🧠 טווח ארוך
+• שווי: ${formatCurrency(longTotals.value)}
+• רווח/הפסד: ${longTotals.pnl >= 0 ? '+' : ''}${formatCurrency(longTotals.pnl)}
+• שינוי: ${longTotals.pnlPercent.toFixed(2)}%
+
+⚡ טריידים
+• סה״כ הון: ${formatCurrency(tradeCapital)}
+• תשואה שבועית: ${tradeWeeklyReturn.toFixed(2)}%
+
+💼 סה״כ הון כולל: ${formatCurrency(totalEquity)}
+
+⏰ עודכן: ${new Date().toLocaleString('he-IL')}
+  `;
+
+  await client.sendMessage(settings.chatId, message, { parse_mode: 'HTML' });
 };
 
 const alertCooldown = new Map();
@@ -281,6 +449,69 @@ if (bot) {
   cron.schedule('*/30 * * * *', async () => {
     console.log('🚨 Running entry alert job...');
     await runEntryAlerts();
+  }, {
+    timezone: 'Asia/Jerusalem'
+  });
+
+  cron.schedule('* * * * *', async () => {
+    const now = new Date();
+    const timeZone = 'Asia/Jerusalem';
+    const nowParts = getZonedParts(now, timeZone);
+
+    const settingsList = await TelegramSettings.find({
+      isActive: true,
+      $or: [
+        { summaryDailyEnabled: true },
+        { summaryWeeklyEnabled: true },
+        { summaryMonthlyEnabled: true }
+      ]
+    }).lean();
+
+    for (const settings of settingsList) {
+      const { hour: dailyHour, minute: dailyMinute } = parseTime(settings.summaryDailyTime);
+      const { hour: weeklyHour, minute: weeklyMinute } = parseTime(settings.summaryWeeklyTime);
+      const { hour: monthlyHour, minute: monthlyMinute } = parseTime(settings.summaryMonthlyTime);
+
+      if (settings.summaryDailyEnabled) {
+        const last = settings.lastDailySentAt ? getZonedParts(settings.lastDailySentAt, timeZone) : null;
+        if (!last || !isSameDay(last, nowParts)) {
+          if (nowParts.hour === dailyHour && nowParts.minute === dailyMinute) {
+            await sendPortfolioSummary(settings, 'יומי');
+            await TelegramSettings.updateOne(
+              { _id: settings._id },
+              { $set: { lastDailySentAt: now } }
+            );
+          }
+        }
+      }
+
+      if (settings.summaryWeeklyEnabled) {
+        const last = settings.lastWeeklySentAt ? getZonedParts(settings.lastWeeklySentAt, timeZone) : null;
+        if (!last || !isSameWeek(last, nowParts)) {
+          const weekday = weekdayToNumber(nowParts.weekday);
+          if (weekday === settings.summaryWeeklyDay && nowParts.hour === weeklyHour && nowParts.minute === weeklyMinute) {
+            await sendPortfolioSummary(settings, 'שבועי');
+            await TelegramSettings.updateOne(
+              { _id: settings._id },
+              { $set: { lastWeeklySentAt: now } }
+            );
+          }
+        }
+      }
+
+      if (settings.summaryMonthlyEnabled) {
+        const last = settings.lastMonthlySentAt ? getZonedParts(settings.lastMonthlySentAt, timeZone) : null;
+        if (!last || !isSameMonth(last, nowParts)) {
+          if (nowParts.day === settings.summaryMonthlyDay && nowParts.hour === monthlyHour && nowParts.minute === monthlyMinute) {
+            await sendPortfolioSummary(settings, 'חודשי');
+            await TelegramSettings.updateOne(
+              { _id: settings._id },
+              { $set: { lastMonthlySentAt: now } }
+            );
+          }
+        }
+      }
+    }
   }, {
     timezone: 'Asia/Jerusalem'
   });

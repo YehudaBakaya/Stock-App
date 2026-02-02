@@ -44,7 +44,12 @@ export default function HoldingsList({ holdings, stockPrices, onDelete, onShowCh
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-lg">{holding.symbol}</h4>
-                    <p className="text-gray-500 text-sm">{holding.shares} מניות</p>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <span>{holding.shares} מניות</span>
+                      <Badge variant={holding.portfolioType === 'trade' ? 'warning' : 'success'}>
+                        {holding.portfolioType === 'trade' ? 'טריידים' : 'טווח ארוך'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
@@ -80,6 +85,7 @@ export default function HoldingsList({ holdings, stockPrices, onDelete, onShowCh
                     variant="ghost" 
                     size="sm"
                     onClick={() => onShowChart(holding.symbol, currentPrice, change)}
+                    aria-label={`הצג גרף עבור ${holding.symbol}`}
                   >
                     <BarChart3 className="w-4 h-4" />
                   </Button>
@@ -88,6 +94,7 @@ export default function HoldingsList({ holdings, stockPrices, onDelete, onShowCh
                     size="sm"
                     onClick={() => onDelete(holding._id)}
                     className="hover:text-red-400"
+                    aria-label={`מחק ${holding.symbol}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

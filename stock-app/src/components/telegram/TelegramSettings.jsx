@@ -16,6 +16,14 @@ export default function TelegramSettings({ settings, onSave }) {
   const [priceThreshold, setPriceThreshold] = useState(settings?.priceThreshold || 5);
   const [entryChangeThreshold, setEntryChangeThreshold] = useState(settings?.entryChangeThreshold || 3);
   const [entryVolumeMultiplier, setEntryVolumeMultiplier] = useState(settings?.entryVolumeMultiplier || 2);
+  const [summaryDailyEnabled, setSummaryDailyEnabled] = useState(settings?.summaryDailyEnabled || false);
+  const [summaryWeeklyEnabled, setSummaryWeeklyEnabled] = useState(settings?.summaryWeeklyEnabled || false);
+  const [summaryMonthlyEnabled, setSummaryMonthlyEnabled] = useState(settings?.summaryMonthlyEnabled || false);
+  const [summaryDailyTime, setSummaryDailyTime] = useState(settings?.summaryDailyTime || '20:00');
+  const [summaryWeeklyDay, setSummaryWeeklyDay] = useState(settings?.summaryWeeklyDay ?? 5);
+  const [summaryWeeklyTime, setSummaryWeeklyTime] = useState(settings?.summaryWeeklyTime || '20:00');
+  const [summaryMonthlyDay, setSummaryMonthlyDay] = useState(settings?.summaryMonthlyDay ?? 1);
+  const [summaryMonthlyTime, setSummaryMonthlyTime] = useState(settings?.summaryMonthlyTime || '20:00');
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState('');
   const [testError, setTestError] = useState('');
@@ -34,6 +42,14 @@ export default function TelegramSettings({ settings, onSave }) {
       setPriceThreshold(settings.priceThreshold || 5);
       setEntryChangeThreshold(settings.entryChangeThreshold || 3);
       setEntryVolumeMultiplier(settings.entryVolumeMultiplier || 2);
+      setSummaryDailyEnabled(settings.summaryDailyEnabled || false);
+      setSummaryWeeklyEnabled(settings.summaryWeeklyEnabled || false);
+      setSummaryMonthlyEnabled(settings.summaryMonthlyEnabled || false);
+      setSummaryDailyTime(settings.summaryDailyTime || '20:00');
+      setSummaryWeeklyDay(settings.summaryWeeklyDay ?? 5);
+      setSummaryWeeklyTime(settings.summaryWeeklyTime || '20:00');
+      setSummaryMonthlyDay(settings.summaryMonthlyDay ?? 1);
+      setSummaryMonthlyTime(settings.summaryMonthlyTime || '20:00');
     }
   }, [settings]);
 
@@ -51,7 +67,15 @@ export default function TelegramSettings({ settings, onSave }) {
       notifyEntryAlerts,
       priceThreshold: parseFloat(priceThreshold),
       entryChangeThreshold: parseFloat(entryChangeThreshold),
-      entryVolumeMultiplier: parseFloat(entryVolumeMultiplier)
+      entryVolumeMultiplier: parseFloat(entryVolumeMultiplier),
+      summaryDailyEnabled,
+      summaryWeeklyEnabled,
+      summaryMonthlyEnabled,
+      summaryDailyTime,
+      summaryWeeklyDay: parseInt(summaryWeeklyDay, 10),
+      summaryWeeklyTime,
+      summaryMonthlyDay: parseInt(summaryMonthlyDay, 10),
+      summaryMonthlyTime
     });
     setSaved(true);
     setTestError('');
@@ -234,6 +258,85 @@ export default function TelegramSettings({ settings, onSave }) {
             value={entryVolumeMultiplier}
             onChange={(e) => setEntryVolumeMultiplier(e.target.value)}
           />
+        </div>
+
+        {/* Portfolio Summaries */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+            <span className="text-gray-300">דוח יומי</span>
+            <Switch checked={summaryDailyEnabled} onChange={setSummaryDailyEnabled} />
+          </div>
+          {summaryDailyEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Input
+                type="time"
+                label="שעת שליחה יומית"
+                value={summaryDailyTime}
+                onChange={(e) => setSummaryDailyTime(e.target.value)}
+              />
+              <div className="text-xs text-slate-400 flex items-end">
+                נשלח כל יום לפי השעה שתבחר.
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+            <span className="text-gray-300">דוח שבועי</span>
+            <Switch checked={summaryWeeklyEnabled} onChange={setSummaryWeeklyEnabled} />
+          </div>
+          {summaryWeeklyEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-slate-300 text-sm mb-2 block">יום בשבוע</label>
+                <select
+                  value={summaryWeeklyDay}
+                  onChange={(e) => setSummaryWeeklyDay(parseInt(e.target.value, 10))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white"
+                >
+                  <option value={0}>ראשון</option>
+                  <option value={1}>שני</option>
+                  <option value={2}>שלישי</option>
+                  <option value={3}>רביעי</option>
+                  <option value={4}>חמישי</option>
+                  <option value={5}>שישי</option>
+                  <option value={6}>שבת</option>
+                </select>
+              </div>
+              <Input
+                type="time"
+                label="שעת שליחה שבועית"
+                value={summaryWeeklyTime}
+                onChange={(e) => setSummaryWeeklyTime(e.target.value)}
+              />
+              <div className="text-xs text-slate-400 flex items-end">
+                נשלח ביום ובשעה שתבחר.
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+            <span className="text-gray-300">דוח חודשי</span>
+            <Switch checked={summaryMonthlyEnabled} onChange={setSummaryMonthlyEnabled} />
+          </div>
+          {summaryMonthlyEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Input
+                type="number"
+                label="יום בחודש (1-28)"
+                value={summaryMonthlyDay}
+                onChange={(e) => setSummaryMonthlyDay(e.target.value)}
+                min={1}
+                max={28}
+              />
+              <Input
+                type="time"
+                label="שעת שליחה חודשית"
+                value={summaryMonthlyTime}
+                onChange={(e) => setSummaryMonthlyTime(e.target.value)}
+              />
+              <div className="text-xs text-slate-400 flex items-end">
+                מומלץ לבחור יום עד 28.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Save Button */}

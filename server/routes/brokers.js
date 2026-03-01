@@ -36,4 +36,14 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+router.delete('/:brokerName', auth, async (req, res) => {
+  try {
+    await BrokerConnection.findOneAndDelete({ userId: req.user.id, brokerName: req.params.brokerName });
+    res.json({ message: 'החיבור נותק' });
+  } catch (err) {
+    console.error('Delete broker connection error:', err);
+    res.status(500).json({ message: 'שגיאת שרת' });
+  }
+});
+
 module.exports = router;

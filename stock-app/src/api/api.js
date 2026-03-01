@@ -84,5 +84,6 @@ export const saveTradingGoals = (data) => api.post('/trading-goals', data);
 
 export const getBrokerConnections = () => api.get('/brokers');
 export const saveBrokerConnection = (data) => api.post('/brokers', data);
+export const deleteBrokerConnection = (brokerName) => api.delete(`/brokers/${brokerName}`);
 
 export default api;

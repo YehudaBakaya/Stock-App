@@ -7,6 +7,7 @@
   import Switch from './components/ui/Switch';
   import ApiStatusBadge from './components/ui/ApiStatusBadge';
   import { getAlerts } from './api/api';
+  import useAlertNotifications from './hooks/useAlertNotifications';
   import {
     BarChart3,
     TrendingUp,
@@ -35,9 +36,11 @@
         const res = await getAlerts();
         return res.data;
       },
-      refetchInterval: 60_000,
+      refetchInterval: 30_000,
     });
     const activeAlertCount = alertsData.filter((a) => a.isActive).length;
+
+    useAlertNotifications();
 
     useEffect(() => {
       const nextLang = i18n.language || 'en';

@@ -23,7 +23,7 @@ import Button from '../components/ui/Button';
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const { livePrices, subscribe, unsubscribe } = useLivePrices();
+  const { livePrices, subscribe, unsubscribe, wsStatus } = useLivePrices();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedChart, setSelectedChart] = useState(null);
   const [showTelegramSettings, setShowTelegramSettings] = useState(false);
@@ -185,8 +185,24 @@ export default function Dashboard() {
             </h1>
             <p className="text-slate-400 mt-2 text-lg">הנה סקירה של התיק שלך היום</p>
           </div>
-          <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+          <div className="flex gap-3 flex-wrap items-center">
+            {/* WebSocket status badge */}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              ${wsStatus === 'connected'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : wsStatus === 'connecting'
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+              }`}>
+              {wsStatus === 'connected' ? (
+                <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />⚡ Live</>
+              ) : wsStatus === 'connecting' ? (
+                <><RefreshCw className="w-3 h-3 animate-spin" />מתחבר...</>
+              ) : (
+                <><span className="w-1.5 h-1.5 rounded-full bg-red-400" />⚠ Offline</>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => { refetch(); queryClient.invalidateQueries(['holdings']); }} disabled={isLoading}>
               <RefreshCw className={`w-4 h-4 ml-2 ${isLoading ? 'animate-spin' : ''}`} />
               רענן
             </Button>

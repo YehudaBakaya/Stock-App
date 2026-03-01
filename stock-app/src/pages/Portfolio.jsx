@@ -6,7 +6,7 @@ import CardContent from "../components/ui/CardContent";
 import CardHeader from "../components/ui/CardHeader";
 import CardTitle from "../components/ui/CardTitle";
 import { useQuery } from "@tanstack/react-query";
-import { getHoldings, getStockQuote, getStockHistory } from "../api/api";
+import { getHoldings, getStockQuote, getStockHistory, getTradingGoals } from "../api/api";
 import { HoldingRowSkeleton } from "../components/ui/Skeleton";
 
 import { 
@@ -26,7 +26,6 @@ const COLORS = ['#34d399', '#38bdf8', '#fbbf24', '#22c55e', '#f97316', '#06b6d4'
 
 export default function Portfolio() {
   const [stockPrices, setStockPrices] = useState({});
-  const [tradeCapital, setTradeCapital] = useState(0);
   const [performanceView, setPerformanceView] = useState("daily");
   const [performanceData, setPerformanceData] = useState([]);
   const [performanceError, setPerformanceError] = useState("");
@@ -38,6 +37,15 @@ export default function Portfolio() {
       const res = await getHoldings();
       return res.data;
     }
+  });
+
+  const { data: tradingGoalsData } = useQuery({
+    queryKey: ["tradingGoals"],
+    queryFn: async () => {
+      const res = await getTradingGoals();
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -203,68 +211,54 @@ export default function Portfolio() {
     };
   }, [holdingsKey, performanceView]);
 
-  useEffect(() => {
-    const calculateTradeCapital = () => {
-      const saved = localStorage.getItem("tradingGoals");
-      if (!saved) {
-        setTradeCapital(0);
-        return;
-      }
-      try {
-        const parsed = JSON.parse(saved);
-        const entries = parsed.profitEntries || {};
-        const days = entries.days || {};
-        const weeks = entries.weeks || {};
-        const months = entries.months || {};
-        const baseCapital = Number.isFinite(parsed.baseCapital)
-          ? parsed.baseCapital
-          : Number.isFinite(parsed.currentCapital)
-          ? parsed.currentCapital
-          : 0;
+  const tradeCapital = useMemo(() => {
+    const parsed = tradingGoalsData;
+    if (!parsed) return 0;
+    try {
+      const entries = parsed.profitEntries || {};
+      const days = entries.days || {};
+      const weeks = entries.weeks || {};
+      const months = entries.months || {};
+      const baseCapital = Number.isFinite(parsed.baseCapital)
+        ? parsed.baseCapital
+        : Number.isFinite(parsed.currentCapital)
+        ? parsed.currentCapital
+        : 0;
 
-        const monthMap = new Map();
-        Object.entries(days).forEach(([dayKey, value]) => {
-          const monthKey = dayKey.slice(0, 7);
-          const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
-          entry.days += Number(value) || 0;
-          monthMap.set(monthKey, entry);
-        });
+      const monthMap = new Map();
+      Object.entries(days).forEach(([dayKey, value]) => {
+        const monthKey = dayKey.slice(0, 7);
+        const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+        entry.days += Number(value) || 0;
+        monthMap.set(monthKey, entry);
+      });
 
-        Object.entries(weeks).forEach(([weekKey, value]) => {
-          const parts = weekKey.split("-");
-          const monthKey = `${parts[0]}-${parts[1]}`;
-          const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
-          entry.weeks += Number(value) || 0;
-          entry.hasWeeks = true;
-          monthMap.set(monthKey, entry);
-        });
+      Object.entries(weeks).forEach(([weekKey, value]) => {
+        const parts = weekKey.split("-");
+        const monthKey = `${parts[0]}-${parts[1]}`;
+        const entry = monthMap.get(monthKey) || { days: 0, weeks: 0, hasWeeks: false };
+        entry.weeks += Number(value) || 0;
+        entry.hasWeeks = true;
+        monthMap.set(monthKey, entry);
+      });
 
-        let total = 0;
-        const allMonths = new Set([
-          ...Object.keys(months),
-          ...monthMap.keys()
-        ]);
-        allMonths.forEach((monthKey) => {
-          if (typeof months[monthKey] === "number") {
-            total += months[monthKey];
-            return;
-          }
-          const entry = monthMap.get(monthKey);
-          if (!entry) return;
-          total += entry.hasWeeks ? entry.weeks : entry.days;
-        });
+      let total = 0;
+      const allMonths = new Set([...Object.keys(months), ...monthMap.keys()]);
+      allMonths.forEach((monthKey) => {
+        if (typeof months[monthKey] === "number") {
+          total += months[monthKey];
+          return;
+        }
+        const entry = monthMap.get(monthKey);
+        if (!entry) return;
+        total += entry.hasWeeks ? entry.weeks : entry.days;
+      });
 
-        setTradeCapital(Math.max(baseCapital + total, 0));
-      } catch {
-        setTradeCapital(0);
-      }
-    };
-
-    calculateTradeCapital();
-    const handler = () => calculateTradeCapital();
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
+      return Math.max(baseCapital + total, 0);
+    } catch {
+      return 0;
+    }
+  }, [tradingGoalsData]);
 
   const holdingsWithValue = holdings.map((holding) => {
     const currentPrice = stockPrices[holding.symbol]?.price || holding.buyPrice;

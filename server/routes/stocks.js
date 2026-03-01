@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const { classifySymbol } = require('../services/stockService');
+const { getCompanyProfile, getAnalystRatings } = require('../services/finnhubService');
 
 const API_KEY = process.env.TWELVEDATA_API_KEY;
 const BASE_URL = 'https://api.twelvedata.com';
@@ -47,13 +49,16 @@ router.get('/quote/:symbol', async (req, res) => {
 
     const quote = response.data || {};
 
+    const { currency } = classifySymbol(symbol);
+
     if (quote.status === 'error' || quote.code) {
       const mockData = {
         symbol: symbol.toUpperCase(),
         price: 100 + Math.random() * 100,
         change: (Math.random() - 0.5) * 10,
         changePercent: (Math.random() - 0.5) * 5,
-        volume: Math.floor(Math.random() * 10000000)
+        volume: Math.floor(Math.random() * 10000000),
+        currency
       };
       return res.json(mockData);
     }
@@ -67,20 +72,22 @@ router.get('/quote/:symbol', async (req, res) => {
       high: parseFloat(quote.high || 0),
       low: parseFloat(quote.low || 0),
       open: parseFloat(quote.open || 0),
-      previousClose: parseFloat(quote.previous_close || 0)
+      previousClose: parseFloat(quote.previous_close || 0),
+      currency
     };
 
     setCache(cacheKey, data);
     res.json(data);
   } catch (err) {
     console.error('Get quote error:', err);
-    // Return mock data on error
+    const { currency } = classifySymbol(req.params.symbol);
     res.json({
       symbol: req.params.symbol.toUpperCase(),
       price: 100 + Math.random() * 100,
       change: (Math.random() - 0.5) * 10,
       changePercent: (Math.random() - 0.5) * 5,
-      volume: Math.floor(Math.random() * 10000000)
+      volume: Math.floor(Math.random() * 10000000),
+      currency
     });
   }
 });
@@ -250,6 +257,18 @@ router.get('/search', async (req, res) => {
     console.error('Search error:', err);
     res.json([]);
   }
+});
+
+// Company profile (Finnhub)
+router.get('/profile/:symbol', async (req, res) => {
+  const profile = await getCompanyProfile(req.params.symbol.toUpperCase());
+  res.json(profile);
+});
+
+// Analyst ratings (Finnhub)
+router.get('/ratings/:symbol', async (req, res) => {
+  const ratings = await getAnalystRatings(req.params.symbol.toUpperCase());
+  res.json(ratings);
 });
 
 // Helper functions

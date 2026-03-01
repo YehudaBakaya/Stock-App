@@ -4,6 +4,7 @@
   import { useAuth } from './context/AuthContext';
   import { useTheme } from './components/Profile/ThemeProvider';
   import Switch from './components/ui/Switch';
+  import ApiStatusBadge from './components/ui/ApiStatusBadge';
   import {
     BarChart3,
     TrendingUp,
@@ -133,6 +134,7 @@
               </span>
               <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
             </div>
+            <ApiStatusBadge />
           </div>
         </aside>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Star, Plus, Trash2, Bell, BellOff, Search, X } from 'lucide-react';
@@ -10,10 +10,13 @@ import {
 import { useToast } from '../context/ToastContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useLivePrices } from '../context/WebSocketContext';
+import { formatPrice, getCurrency } from '../utils/symbolUtils';
 
 export default function Watchlist() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { livePrices, subscribe, unsubscribe } = useLivePrices();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
@@ -31,7 +34,7 @@ export default function Watchlist() {
     }
   });
 
-  // Fetch live prices for watchlist items
+  // טעינה ראשונית של מחירים
   const { data: watchlistPrices = {} } = useQuery({
     queryKey: ['watchlistPrices', watchlist.map(w => w.symbol).join(',')],
     queryFn: async () => {
@@ -47,8 +50,16 @@ export default function Watchlist() {
       return prices;
     },
     enabled: watchlist.length > 0,
-    refetchInterval: 60000
+    // אין refetchInterval — WebSocket מטפל בעדכונים חיים
   });
+
+  // מנוי WebSocket לסמלי ה-Watchlist
+  useEffect(() => {
+    if (watchlist.length === 0) return;
+    const symbols = watchlist.map((w) => w.symbol);
+    subscribe(symbols);
+    return () => unsubscribe(symbols);
+  }, [watchlist]);
 
   // Fetch alerts
   const { data: alerts = [] } = useQuery({
@@ -214,8 +225,9 @@ export default function Watchlist() {
               ) : (
                 <div className="space-y-2">
                   {watchlist.map((item) => {
-                    const priceData = watchlistPrices[item.symbol];
+                    const priceData = livePrices[item.symbol] || watchlistPrices[item.symbol];
                     const change = priceData?.changePercent ?? 0;
+                    const currency = priceData?.currency || getCurrency(item.symbol);
                     return (
                       <div
                         key={item.symbol}
@@ -236,7 +248,7 @@ export default function Watchlist() {
                         </div>
                         <div className="flex items-center gap-3">
                           {priceData?.price && (
-                            <p className="text-white font-semibold text-sm">${priceData.price.toFixed(2)}</p>
+                            <p className="text-white font-semibold text-sm">{formatPrice(priceData.price, currency)}</p>
                           )}
                           <button
                             onClick={() => removeWatchlistMutation.mutate(item.symbol)}

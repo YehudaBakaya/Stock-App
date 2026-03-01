@@ -59,10 +59,15 @@ export const deleteAlert = (id) => api.delete(`/alerts/${id}`);
 export const toggleAlert = (id) => api.patch(`/alerts/${id}/toggle`);
 
 // Stocks
-export const getStockQuote = (symbol, params = {}) => api.get(`/stocks/quote/${symbol}`, { params });
-export const getStockHistory = (symbol, params = {}) => api.get(`/stocks/history/${symbol}`, { params });
+export const getStockQuote = (symbol, params = {}) => api.get(`/stocks/quote/${encodeURIComponent(symbol)}`, { params });
+export const getStockHistory = (symbol, params = {}) => api.get(`/stocks/history/${encodeURIComponent(symbol)}`, { params });
 export const getTopMovers = () => api.get('/stocks/movers');
 export const searchStocks = (query) => api.get('/stocks/search', { params: { q: query } });
+export const getCompanyProfile = (symbol) => api.get(`/stocks/profile/${encodeURIComponent(symbol)}`);
+export const getAnalystRatings = (symbol) => api.get(`/stocks/ratings/${encodeURIComponent(symbol)}`);
+
+// API Status
+export const getApiStatus = () => api.get('/status');
 
 // News
 export const getMarketNews = (params = {}) => api.get('/news', { params });

@@ -10,6 +10,9 @@ import { createPageUrl } from "@/utils";
 import OrderBook from "../components/trading/OrderBook";
 import { getStockQuote, searchStocks } from "../api/api";
 import { StockRowSkeleton } from "../components/ui/Skeleton";
+import { useLivePrices } from "../context/WebSocketContext";
+import { formatPrice, formatChange, getCurrency } from "../utils/symbolUtils";
+import CompanyProfileCard from "../components/stocks/CompanyProfileCard";
 
 const initialStocks = [
   { symbol: 'AAPL', name: 'Apple Inc.', marketCap: '3.01T', sector: 'Technology', exchange: 'NYSE' },
@@ -31,6 +34,7 @@ const formatVolume = (value) => {
 };
 
 export default function Stocks() {
+  const { livePrices, subscribe, unsubscribe } = useLivePrices();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -96,11 +100,13 @@ export default function Stocks() {
     };
 
     fetchQuotes();
-    const interval = setInterval(fetchQuotes, 30_000);
+
+    const symbols = trackedStocks.map((s) => s.symbol);
+    subscribe(symbols);
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      unsubscribe(symbols);
     };
   }, [trackedStocks]);
 
@@ -138,9 +144,16 @@ export default function Stocks() {
     };
   }, [searchQuery]);
 
-  const filteredStocks = useMemo(() => {
-    return stocks;
-  }, [stocks]);
+  // מיזוג מחירי WebSocket עם הנתונים הקיימים
+  const mergedStocks = useMemo(() => {
+    return stocks.map((s) => {
+      const live = livePrices[s.symbol];
+      if (!live) return s;
+      return { ...s, price: live.price, changePercent: live.changePercent, currency: live.currency };
+    });
+  }, [stocks, livePrices]);
+
+  const filteredStocks = mergedStocks;
 
   const sortedStocks = [...filteredStocks].sort((a, b) => {
     switch (sortBy) {
@@ -345,7 +358,7 @@ export default function Stocks() {
 
                       <div className="text-right">
                         <p className="font-bold text-white text-xl mb-1">
-                          ${displayPrice.toFixed(2)}
+                          {formatPrice(displayPrice, stock.currency || getCurrency(stock.symbol))}
                         </p>
                         <p className="text-xs text-slate-500 mb-1">Last close</p>
                         <div
@@ -360,8 +373,7 @@ export default function Stocks() {
                           )}
                           <div className="text-right">
                             <div className="font-medium">
-                              {isUp ? '+' : ''}
-                              ${changeValue.toFixed(2)}
+                              {formatChange(changeValue, stock.currency || getCurrency(stock.symbol))}
                             </div>
                             <div className="text-sm">({changePercentValue.toFixed(2)}%)</div>
                           </div>
@@ -375,8 +387,8 @@ export default function Stocks() {
             </Card>
           </div>
 
-          {/* Order Book */}
-          <div>
+          {/* Order Book + Company Profile */}
+          <div className="space-y-4">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -384,6 +396,15 @@ export default function Stocks() {
             >
               <OrderBook symbol={selectedStock?.symbol} currentPrice={selectedStock?.price} />
             </motion.div>
+            {selectedStock?.symbol && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <CompanyProfileCard symbol={selectedStock.symbol} />
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

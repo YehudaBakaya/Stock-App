@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './components/Profile/ThemeProvider';
 import { ToastProvider } from './context/ToastContext';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 import Layout from './Layout';
 import Dashboard from './pages/Dashboard';
@@ -34,6 +35,7 @@ export default function App() {
       <ThemeProvider>
         <ToastProvider>
         <AuthProvider>
+          <WebSocketProvider>
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
@@ -130,6 +132,7 @@ export default function App() {
             />
             </Routes>
           </BrowserRouter>
+          </WebSocketProvider>
         </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

@@ -1,9 +1,11 @@
+const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const rateLimit = require('express-rate-limit');
+const { initWsServer } = require('./services/wsService');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -104,6 +106,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/status', generalLimiter, (req, res) => {
+  const { lastApiStatus } = require('./services/stockService');
+  res.json({
+    twelvedata: lastApiStatus.source,
+    finnhub: process.env.FINNHUB_API_KEY ? 'configured' : 'not_configured',
+    websocket: 'active',
+    updatedAt: lastApiStatus.updatedAt,
+  });
+});
+
 /* =======================
    Error handler
    ======================= */
@@ -121,7 +133,9 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () =>
+    const server = http.createServer(app);
+    initWsServer(server);
+    server.listen(PORT, () =>
       console.log(`🚀 Server running on port ${PORT}`)
     );
   })

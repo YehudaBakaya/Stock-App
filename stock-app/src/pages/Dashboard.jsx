@@ -6,6 +6,7 @@ import { getHoldings, addHolding, deleteHolding, getTelegramSettings, saveTelegr
 import { exportHoldingsToCSV } from '../utils/export';
 import { useToast } from '../context/ToastContext';
 import { HoldingRowSkeleton } from '../components/ui/Skeleton';
+import { useLivePrices } from '../context/WebSocketContext';
 
 import PortfolioPieChart from '../components/portfolio/PortfolioPieChart';
 import HoldingsList from '../components/portfolio/HoldingsList';
@@ -22,6 +23,7 @@ import Button from '../components/ui/Button';
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { livePrices, subscribe, unsubscribe } = useLivePrices();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedChart, setSelectedChart] = useState(null);
   const [showTelegramSettings, setShowTelegramSettings] = useState(false);
@@ -76,8 +78,14 @@ export default function Dashboard() {
   });
 
 
-  // Fetch stock prices
+  // טעינת מחירים ראשונית + מנוי WebSocket
   useEffect(() => {
+    if (holdings.length === 0) return;
+
+    const symbols = holdings.map((h) => h.symbol);
+    subscribe(symbols);
+
+    // טעינה ראשונית (fallback לפני שה-WebSocket מתחבר)
     const fetchPrices = async () => {
       const prices = {};
       for (const holding of holdings) {
@@ -85,27 +93,33 @@ export default function Dashboard() {
           const res = await getStockQuote(holding.symbol);
           prices[holding.symbol] = {
             price: res.data.price,
-            change: res.data.changePercent
+            change: res.data.changePercent,
+            currency: res.data.currency || 'USD'
           };
-        } catch (err) {
-          // Use mock data if API fails
+        } catch {
           prices[holding.symbol] = {
             price: holding.buyPrice * (1 + (Math.random() - 0.5) * 0.1),
-            change: (Math.random() - 0.5) * 10
+            change: (Math.random() - 0.5) * 10,
+            currency: 'USD'
           };
         }
       }
       setStockPrices(prices);
     };
+    fetchPrices();
 
-    if (holdings.length > 0) {
-      fetchPrices();
-    }
+    return () => unsubscribe(symbols);
   }, [holdings]);
+
+  // מיזוג מחירי WebSocket (חיים) עם מחירי fallback
+  const prices = { ...stockPrices };
+  Object.entries(livePrices).forEach(([sym, data]) => {
+    prices[sym] = { price: data.price, change: data.changePercent, currency: data.currency };
+  });
 
   // Calculate portfolio stats
   const totalValue = holdings.reduce((sum, holding) => {
-    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+    const price = prices[holding.symbol]?.price || holding.buyPrice;
     return sum + (holding.shares * price);
   }, 0);
 
@@ -122,13 +136,13 @@ export default function Dashboard() {
   });
 
   const filteredValue = filteredHoldings.reduce((sum, holding) => {
-    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+    const price = prices[holding.symbol]?.price || holding.buyPrice;
     return sum + (holding.shares * price);
   }, 0);
 
   const topHoldings = [...filteredHoldings]
     .map((holding) => {
-      const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
+      const price = prices[holding.symbol]?.price || holding.buyPrice;
       return {
         symbol: holding.symbol,
         value: holding.shares * price
@@ -138,8 +152,8 @@ export default function Dashboard() {
     .slice(0, 3);
 
   const dailyPnL = filteredHoldings.reduce((sum, holding) => {
-    const price = stockPrices[holding.symbol]?.price || holding.buyPrice;
-    const change = stockPrices[holding.symbol]?.change || 0;
+    const price = prices[holding.symbol]?.price || holding.buyPrice;
+    const change = prices[holding.symbol]?.change || 0;
     return sum + (holding.shares * price * (change / 100));
   }, 0);
 
@@ -355,7 +369,7 @@ export default function Dashboard() {
             transition={{ delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <PortfolioPieChart holdings={filteredHoldings} stockPrices={stockPrices} />
+            <PortfolioPieChart holdings={filteredHoldings} stockPrices={prices} />
           </motion.div>
 
           <motion.div
@@ -380,10 +394,10 @@ export default function Dashboard() {
           ) : (
             <HoldingsList
               holdings={filteredHoldings}
-              stockPrices={stockPrices}
+              stockPrices={prices}
               onDelete={(id) => {
                 const h = holdings.find(x => x._id === id);
-                const sellPrice = h ? stockPrices[h.symbol]?.price : undefined;
+                const sellPrice = h ? prices[h.symbol]?.price : undefined;
                 deleteMutation.mutate({ id, sellPrice });
               }}
               onShowChart={(symbol, price, change) => setSelectedChart({ symbol, price, change })}

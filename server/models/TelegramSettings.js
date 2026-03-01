@@ -93,6 +93,20 @@ const telegramSettingsSchema = new mongoose.Schema({
   },
   lastMonthlySentAt: {
     type: Date
+  },
+  // ניתוח טכני — רשימת מעקב יומית
+  notifyWatchlistUpdate: {
+    type: Boolean,
+    default: false
+  },
+  watchlistUpdateTime: {
+    type: String,
+    default: '08:00'
+  },
+  // התראת פריצת רמה טכנית (תמיכה / התנגדות)
+  notifyBreakout: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

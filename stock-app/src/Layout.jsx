@@ -2,6 +2,7 @@
   import { Link, useLocation } from 'react-router-dom';
   import { useTranslation } from 'react-i18next';
   import { useQuery } from '@tanstack/react-query';
+  import { AnimatePresence, motion } from 'framer-motion';
   import { useAuth } from './context/AuthContext';
   import { useTheme } from './components/Profile/ThemeProvider';
   import Switch from './components/ui/Switch';
@@ -20,7 +21,8 @@
     Menu,
     X, Zap,
     Star,
-    History
+    History,
+    MoreHorizontal
   } from 'lucide-react';
 
   export default function Layout({ children }) {
@@ -29,6 +31,7 @@
     const { t, i18n } = useTranslation();
     const { theme, toggleTheme } = useTheme();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [moreOpen, setMoreOpen] = useState(false);
 
     const { data: alertsData = [] } = useQuery({
       queryKey: ['alerts'],
@@ -186,7 +189,47 @@
           </div>
 
           {/* Mobile Bottom Nav */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1722]/95 backdrop-blur-xl border-t border-white/10">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1722]/95 backdrop-blur-xl border-t border-white/10 z-30">
+            {/* "More" bottom sheet */}
+            <AnimatePresence>
+              {moreOpen && (
+                <>
+                  <motion.div
+                    className="fixed inset-0 bg-black/50 z-40"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <motion.div
+                    className="fixed bottom-16 left-0 right-0 bg-[#0f1722]/98 backdrop-blur-xl border-t border-white/10 z-50 p-4 rounded-t-2xl"
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  >
+                    <div className="grid grid-cols-4 gap-2">
+                      {navigationItems.slice(4).map((item) => (
+                        <Link
+                          key={item.url}
+                          to={item.url}
+                          onClick={() => setMoreOpen(false)}
+                          className={`flex flex-col items-center p-3 rounded-xl ${
+                            location.pathname === item.url
+                              ? 'text-emerald-300 bg-white/5'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          <item.icon className="w-6 h-6" />
+                          <span className="text-xs mt-1 text-center">{item.title}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center justify-around py-2">
               {navigationItems.slice(0, 4).map((item) => (
                 <Link
@@ -200,6 +243,13 @@
                   <span className="text-xs mt-1">{item.title}</span>
                 </Link>
               ))}
+              <button
+                onClick={() => setMoreOpen((v) => !v)}
+                className={`flex flex-col items-center p-2 ${moreOpen ? 'text-emerald-300' : 'text-slate-500'}`}
+              >
+                <MoreHorizontal className="w-5 h-5" />
+                <span className="text-xs mt-1">עוד</span>
+              </button>
             </div>
           </nav>
         </main>

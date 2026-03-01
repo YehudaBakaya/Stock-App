@@ -23,7 +23,7 @@ export function WebSocketProvider({ children }) {
   const [wsStatus, setWsStatus] = useState('disconnected');
 
   const scheduleReconnect = useCallback(() => {
-    if (retryCount.current >= 5) return;
+    if (retryCount.current >= 15) return;
     const delay = Math.min(1000 * 2 ** retryCount.current, 30000);
     retryCount.current += 1;
     reconnectTimer.current = setTimeout(connect, delay);
@@ -105,6 +105,23 @@ export function WebSocketProvider({ children }) {
       clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
+  }, [user, connect]);
+
+  // חזרה לטאב → נסה להתחבר מחדש
+  useEffect(() => {
+    const onVisible = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        user &&
+        wsRef.current?.readyState !== WebSocket.OPEN
+      ) {
+        retryCount.current = 0;
+        clearTimeout(reconnectTimer.current);
+        connect();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user, connect]);
 
   return (

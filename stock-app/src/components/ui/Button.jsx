@@ -1,14 +1,16 @@
-export default function Button({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
-  disabled = false, 
-  onClick, 
+import { motion } from 'framer-motion';
+
+export default function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  onClick,
   className = '',
   type = 'button'
 }) {
   const baseStyles = 'font-bold rounded-xl transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1016]';
-  
+
   const variants = {
     primary: 'bg-gradient-to-r from-emerald-400 to-emerald-300 hover:opacity-90 text-slate-900 shadow-lg shadow-emerald-500/20',
     secondary: 'bg-gradient-to-r from-amber-300 to-amber-200 hover:opacity-90 text-slate-900 shadow-lg shadow-amber-500/20',
@@ -24,13 +26,15 @@ export default function Button({
   };
 
   return (
-    <button
+    <motion.button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      whileTap={disabled ? {} : { scale: 0.96 }}
+      transition={{ duration: 0.1 }}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

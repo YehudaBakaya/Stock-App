@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Bell, MessageCircle, Check, ShieldCheck, AlertTriangle, Trash2 } from 'lucide-react';
+import { Send, Bell, MessageCircle, Check, ShieldCheck, AlertTriangle, Trash2, LineChart, TrendingUp } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -24,6 +24,9 @@ export default function TelegramSettings({ settings, onSave, onDelete }) {
   const [summaryWeeklyTime, setSummaryWeeklyTime] = useState(settings?.summaryWeeklyTime || '20:00');
   const [summaryMonthlyDay, setSummaryMonthlyDay] = useState(settings?.summaryMonthlyDay ?? 1);
   const [summaryMonthlyTime, setSummaryMonthlyTime] = useState(settings?.summaryMonthlyTime || '20:00');
+  const [notifyWatchlistUpdate, setNotifyWatchlistUpdate] = useState(settings?.notifyWatchlistUpdate || false);
+  const [watchlistUpdateTime, setWatchlistUpdateTime] = useState(settings?.watchlistUpdateTime || '08:00');
+  const [notifyBreakout, setNotifyBreakout] = useState(settings?.notifyBreakout || false);
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState('');
   const [testError, setTestError] = useState('');
@@ -50,6 +53,9 @@ export default function TelegramSettings({ settings, onSave, onDelete }) {
       setSummaryWeeklyTime(settings.summaryWeeklyTime || '20:00');
       setSummaryMonthlyDay(settings.summaryMonthlyDay ?? 1);
       setSummaryMonthlyTime(settings.summaryMonthlyTime || '20:00');
+      setNotifyWatchlistUpdate(settings.notifyWatchlistUpdate || false);
+      setWatchlistUpdateTime(settings.watchlistUpdateTime || '08:00');
+      setNotifyBreakout(settings.notifyBreakout || false);
     }
   }, [settings]);
 
@@ -75,7 +81,10 @@ export default function TelegramSettings({ settings, onSave, onDelete }) {
       summaryWeeklyDay: parseInt(summaryWeeklyDay, 10),
       summaryWeeklyTime,
       summaryMonthlyDay: parseInt(summaryMonthlyDay, 10),
-      summaryMonthlyTime
+      summaryMonthlyTime,
+      notifyWatchlistUpdate,
+      watchlistUpdateTime,
+      notifyBreakout,
     });
     setSaved(true);
     setTestError('');
@@ -337,6 +346,56 @@ export default function TelegramSettings({ settings, onSave, onDelete }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Technical Analysis Section */}
+        <div className="border-t border-white/10 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <LineChart className="w-4 h-4 text-violet-400" />
+            <h4 className="text-white font-medium">ניתוח טכני</h4>
+          </div>
+
+          <div className="space-y-3">
+            {/* Watchlist Update */}
+            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+              <div>
+                <span className="text-gray-300 block">עדכון רשימת מעקב</span>
+                <span className="text-gray-500 text-xs">סיכום יומי עם RSI ואות לכל מניה</span>
+              </div>
+              <Switch checked={notifyWatchlistUpdate} onCheckedChange={setNotifyWatchlistUpdate} />
+            </div>
+            {notifyWatchlistUpdate && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Input
+                  type="time"
+                  label="שעת עדכון"
+                  value={watchlistUpdateTime}
+                  onChange={(e) => setWatchlistUpdateTime(e.target.value)}
+                />
+                <div className="text-xs text-slate-400 flex items-end pb-3">
+                  נשלח כל יום בבוקר עם נתונים עדכניים
+                </div>
+              </div>
+            )}
+
+            {/* Breakout Alerts */}
+            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+              <div>
+                <span className="text-gray-300 block">התראת פריצת רמה טכנית</span>
+                <span className="text-gray-500 text-xs">כשמניה פורצת תמיכה/התנגדות</span>
+              </div>
+              <Switch checked={notifyBreakout} onCheckedChange={setNotifyBreakout} />
+            </div>
+
+            {/* /analyze info box */}
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <TrendingUp className="w-4 h-4 text-violet-400 mt-0.5 shrink-0" />
+              <div className="text-xs text-violet-300">
+                <p className="font-medium mb-1">ניתוח AI בזמן אמת</p>
+                <p className="text-violet-400">שלח לבוט: <code className="bg-violet-900/40 px-1 rounded">/analyze AAPL</code> לניתוח טכני מלא + המלצת AI על כל מניה</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Save / Test / Delete Buttons */}

@@ -128,3 +128,20 @@ body {
 .light .border-gray-700    { border-color: rgba(15, 23, 42, 0.12); }
 .light .bg-white\/10   { background-color: rgba(15, 23, 42, 0.08); }
 .light .bg-slate-600   { background-color: #cbd5e1; }
+
+/* ── Card hover effect ──────────────────────────────────────────────────── */
+.card-interactive {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 28px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Financial numbers: tabular (monospace aligned) ─────────────────────── */
+.financial-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-family: 'DM Sans', monospace;
+}

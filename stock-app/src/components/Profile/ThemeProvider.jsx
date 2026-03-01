@@ -16,7 +16,9 @@ export const useTheme = () => {
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('stockpro-theme');
-    return saved || 'dark';
+    if (saved) return saved;
+    // Auto-detect on first visit
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
 
   useEffect(() => {

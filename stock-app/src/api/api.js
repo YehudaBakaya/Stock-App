@@ -21,15 +21,42 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('tradingGoals');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth
 export const login = (email, password) => api.post('/auth/login', { email, password });
 export const register = (data) => api.post('/auth/register', data);
 export const getMe = () => api.get('/auth/me');
+export const refreshToken = () => api.post('/auth/refresh');
 
 // Portfolio
 export const getHoldings = () => api.get('/portfolio');
 export const addHolding = (data) => api.post('/portfolio', data);
-export const deleteHolding = (id) => api.delete(`/portfolio/${id}`);
+export const deleteHolding = (id, sellPrice) => api.delete(`/portfolio/${id}`, { data: { sellPrice } });
+
+// Watchlist
+export const getWatchlist = () => api.get('/watchlist');
+export const addToWatchlist = (symbol) => api.post('/watchlist', { symbol });
+export const removeFromWatchlist = (symbol) => api.delete(`/watchlist/${symbol}`);
+
+// Transactions
+export const getTransactions = () => api.get('/transactions');
+
+// Alerts
+export const getAlerts = () => api.get('/alerts');
+export const createAlert = (data) => api.post('/alerts', data);
+export const deleteAlert = (id) => api.delete(`/alerts/${id}`);
+export const toggleAlert = (id) => api.patch(`/alerts/${id}/toggle`);
 
 // Stocks
 export const getStockQuote = (symbol, params = {}) => api.get(`/stocks/quote/${symbol}`, { params });

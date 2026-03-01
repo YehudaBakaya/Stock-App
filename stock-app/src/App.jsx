@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './components/Profile/ThemeProvider';
+import { ToastProvider } from './context/ToastContext';
 
 import Layout from './Layout';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +13,8 @@ import Profile from './pages/Profile';
 import TradingGoals from './pages/Trading Goals';
 import Portfolio from "./pages/Portfolio"
 import StockAnalysis from './pages/StockAnalysis';
+import Watchlist from './pages/Watchlist';
+import Transactions from './pages/Transactions';
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
             <Routes>
@@ -102,9 +106,32 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route
+              path="/watchlist"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Watchlist />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/transactions"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Transactions />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

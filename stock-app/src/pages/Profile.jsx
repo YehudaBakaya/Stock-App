@@ -6,6 +6,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Switch from '../components/ui/Switch';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
   getMe,
   updateMe,
@@ -16,24 +17,6 @@ import {
 } from '../api/profileApi';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const Toasts = ({ items, onRemove }) => (
-  <div className="fixed top-4 right-4 z-50 space-y-2">
-    {items.map((toast) => (
-      <div
-        key={toast.id}
-        className={`px-4 py-3 rounded-xl text-sm border shadow-lg ${
-          toast.type === 'success'
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-            : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
-        }`}
-        onClick={() => onRemove(toast.id)}
-      >
-        {toast.message}
-      </div>
-    ))}
-  </div>
-);
 
 const SkeletonLine = ({ className = '' }) => (
   <div className={`h-4 bg-white/10 rounded ${className}`} />
@@ -51,6 +34,7 @@ const SectionHeader = ({ icon: Icon, title }) => (
 export default function Profile() {
   const { t, i18n } = useTranslation();
   const { user, setUser } = useAuth();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('');
   const [memberSince, setMemberSince] = useState('');
@@ -73,7 +57,6 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [keyLoading, setKeyLoading] = useState(false);
-  const [toasts, setToasts] = useState([]);
   const [passwords, setPasswords] = useState({
     current: '',
     next: '',
@@ -130,18 +113,6 @@ export default function Profile() {
       document.documentElement.setAttribute('dir', nextLang === 'he' ? 'rtl' : 'ltr');
     }
   }, [preferences.language, i18n]);
-
-  const addToast = (type, message) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 4000);
-  };
-
-  const removeToast = (id) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
 
   const emailError = useMemo(() => {
     if (!email) return 'Email is required.';
@@ -293,8 +264,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen app-bg p-6 text-white">
-      <Toasts items={toasts} onRemove={removeToast} />
-
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-emerald-400 to-amber-300 flex items-center justify-center shadow-lg shadow-emerald-500/20">

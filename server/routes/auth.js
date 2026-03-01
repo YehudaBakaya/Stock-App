@@ -44,7 +44,6 @@ router.post('/register', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-     console.log("user:" , user)
     res.status(201).json({
       token,
       user: {
@@ -132,6 +131,24 @@ router.put('/me', auth, async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('Update user error:', err);
+    res.status(500).json({ message: 'שגיאת שרת' });
+  }
+});
+
+// Refresh — extend session for a valid authenticated user
+router.post('/refresh', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'משתמש לא נמצא' });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    res.json({ token });
+  } catch (err) {
+    console.error('Refresh error:', err);
     res.status(500).json({ message: 'שגיאת שרת' });
   }
 });

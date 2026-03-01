@@ -4,17 +4,19 @@
   import { useAuth } from './context/AuthContext';
   import { useTheme } from './components/Profile/ThemeProvider';
   import Switch from './components/ui/Switch';
-  import { 
-    BarChart3, 
+  import {
+    BarChart3,
     TrendingUp,
     LineChart,
-    Briefcase, 
+    Briefcase,
     User,
     Bell,
     LogOut,
     Sparkles,
     Menu,
-    X, Zap
+    X, Zap,
+    Star,
+    History
   } from 'lucide-react';
 
   export default function Layout({ children }) {
@@ -36,6 +38,8 @@
   { title: 'ניתוח מניות', url: '/analysis', icon: LineChart },
   { title: t('nav.trading'), url: '/trading', icon: Zap },
   { title: t('nav.portfolio'), url: '/Portfolio', icon: Briefcase },
+  { title: 'Watchlist', url: '/watchlist', icon: Star },
+  { title: 'היסטוריה', url: '/transactions', icon: History },
   { title: t('nav.profile'), url: '/profile', icon: User },
 ];
 

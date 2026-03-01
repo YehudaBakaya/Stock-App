@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, RefreshCw, TrendingUp, Wallet, Activity, Send } from 'lucide-react';
+import { Plus, RefreshCw, TrendingUp, Wallet, Activity, Send, Briefcase, Download } from 'lucide-react';
 import { getHoldings, addHolding, deleteHolding, getTelegramSettings, saveTelegramSettings, getStockQuote } from '../api/api';
+import { exportHoldingsToCSV } from '../utils/export';
+import { useToast } from '../context/ToastContext';
+import { HoldingRowSkeleton } from '../components/ui/Skeleton';
 
 import PortfolioPieChart from '../components/portfolio/PortfolioPieChart';
 import HoldingsList from '../components/portfolio/HoldingsList';
@@ -18,6 +21,7 @@ import Button from '../components/ui/Button';
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const { addToast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedChart, setSelectedChart] = useState(null);
   const [showTelegramSettings, setShowTelegramSettings] = useState(false);
@@ -48,15 +52,19 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries(['holdings']);
       setShowAddModal(false);
-    }
+      addToast('success', 'המניה נוספה לתיק');
+    },
+    onError: () => addToast('error', 'שגיאה בהוספת המניה'),
   });
 
   // Delete holding mutation
   const deleteMutation = useMutation({
-    mutationFn: deleteHolding,
+    mutationFn: ({ id, sellPrice }) => deleteHolding(id, sellPrice),
     onSuccess: () => {
       queryClient.invalidateQueries(['holdings']);
-    }
+      addToast('success', 'המניה הוסרה מהתיק');
+    },
+    onError: () => addToast('error', 'שגיאה במחיקת המניה'),
   });
 
   // Save telegram settings mutation
@@ -150,11 +158,17 @@ export default function Dashboard() {
             </h1>
             <p className="text-slate-400 mt-2 text-lg">הנה סקירה של התיק שלך היום</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
               <RefreshCw className={`w-4 h-4 ml-2 ${isLoading ? 'animate-spin' : ''}`} />
               רענן
             </Button>
+            {holdings.length > 0 && (
+              <Button variant="outline" onClick={() => exportHoldingsToCSV(holdings, stockPrices)}>
+                <Download className="w-4 h-4 ml-2" />
+                ייצוא CSV
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setShowTelegramSettings(!showTelegramSettings)}>
               <Send className="w-4 h-4 ml-2" />
               טלגרם
@@ -310,24 +324,26 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Main Content Grid */}
-        {holdings.length === 0 && (
+        {/* Main Content Grid — empty state */}
+        {!isLoading && holdings.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.16 }}
           >
             <Card>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                  <Briefcase className="w-8 h-8 text-emerald-400" />
+                </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg">אין עדיין נתונים בתיק</h3>
-                  <p className="text-slate-400 text-sm">הוסף מניה או התחבר לברוקר כדי להתחיל</p>
+                  <p className="text-white font-semibold text-lg">התיק שלך ריק</p>
+                  <p className="text-slate-400 text-sm mt-1">הוסף את המניה הראשונה שלך כדי להתחיל לעקוב</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button onClick={() => setShowAddModal(true)}>
-                    הוסף מניה
-                  </Button>
-                </div>
+                <Button onClick={() => setShowAddModal(true)}>
+                  <Plus className="w-4 h-4 ml-2" />
+                  הוסף מניה ראשונה
+                </Button>
               </div>
             </Card>
           </motion.div>
@@ -357,12 +373,22 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <HoldingsList
-            holdings={filteredHoldings}
-            stockPrices={stockPrices}
-            onDelete={(id) => deleteMutation.mutate(id)}
-            onShowChart={(symbol, price, change) => setSelectedChart({ symbol, price, change })}
-          />
+          {isLoading ? (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => <HoldingRowSkeleton key={i} />)}
+            </div>
+          ) : (
+            <HoldingsList
+              holdings={filteredHoldings}
+              stockPrices={stockPrices}
+              onDelete={(id) => {
+                const h = holdings.find(x => x._id === id);
+                const sellPrice = h ? stockPrices[h.symbol]?.price : undefined;
+                deleteMutation.mutate({ id, sellPrice });
+              }}
+              onShowChart={(symbol, price, change) => setSelectedChart({ symbol, price, change })}
+            />
+          )}
         </motion.div>
 
         {/* Top Movers */}

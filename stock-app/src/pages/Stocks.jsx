@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import OrderBook from "../components/trading/OrderBook";
 import { getStockQuote, searchStocks } from "../api/api";
+import { StockRowSkeleton } from "../components/ui/Skeleton";
 
 const initialStocks = [
   { symbol: 'AAPL', name: 'Apple Inc.', marketCap: '3.01T', sector: 'Technology', exchange: 'NYSE' },
@@ -288,7 +289,18 @@ export default function Stocks() {
               {/* Stock List */}
               <div className="divide-y divide-white/10">
                 {loading && (
-                  <div className="p-6 text-slate-400 text-sm">Loading live market data...</div>
+                  <div className="space-y-2 p-2">
+                    {[...Array(6)].map((_, i) => <StockRowSkeleton key={i} />)}
+                  </div>
+                )}
+                {!loading && sortedStocks.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                    <div className="w-14 h-14 bg-slate-500/10 rounded-2xl flex items-center justify-center">
+                      <Search className="w-7 h-7 text-slate-400" />
+                    </div>
+                    <p className="text-slate-300 font-medium">לא נמצאו מניות</p>
+                    <p className="text-slate-500 text-sm">נסה לחפש לפי סמל או שם חברה</p>
+                  </div>
                 )}
                 {sortedStocks.map((stock, index) => {
                   const displayPrice = stock.previousClose ?? stock.price ?? 0;

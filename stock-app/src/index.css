@@ -26,6 +26,11 @@
   --app-muted: #64748b;
 }
 
+/* Smooth dark/light theme transition */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--app-bg);

@@ -436,6 +436,49 @@ const runEntryAlerts = async () => {
   }
 };
 
+// Price alert cron — every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  try {
+    const Alert = require('../models/Alert');
+    const { getQuote } = require('./stockService');
+
+    const activeAlerts = await Alert.find({ isActive: true });
+    if (activeAlerts.length === 0) return;
+
+    for (const alert of activeAlerts) {
+      const quote = await getQuote(alert.symbol);
+      if (!quote?.price) continue;
+
+      const price = quote.price;
+      const triggered =
+        (alert.condition === 'above' && price >= alert.targetPrice) ||
+        (alert.condition === 'below' && price <= alert.targetPrice);
+
+      if (!triggered) continue;
+
+      // Deactivate alert
+      alert.isActive = false;
+      alert.triggeredAt = new Date();
+      await alert.save();
+
+      // Send Telegram notification
+      const settings = await TelegramSettings.findOne({ userId: alert.userId, isActive: true });
+      if (!settings?.chatId) continue;
+
+      const client = getBotForToken(settings.botToken);
+      const direction = alert.condition === 'above' ? '⬆️ עלה מעל' : '⬇️ ירד מתחת ל';
+      const msg =
+        `🔔 <b>התראת מחיר</b>\n\n` +
+        `${alert.symbol} ${direction} $${alert.targetPrice}\n` +
+        `מחיר נוכחי: <b>$${price.toFixed(2)}</b>`;
+
+      await client.sendMessage(settings.chatId, msg, { parse_mode: 'HTML' });
+    }
+  } catch (err) {
+    console.error('Price alert cron error:', err.message || err);
+  }
+}, { timezone: 'Asia/Jerusalem' });
+
 // Schedule daily summary at 18:00 Israel time
 if (bot) {
   cron.schedule('0 18 * * *', async () => {

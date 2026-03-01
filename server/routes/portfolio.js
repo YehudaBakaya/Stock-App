@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Holding = require('../models/Holding');
+const Transaction = require('../models/Transaction');
 const auth = require('../middleware/auth');
 
 // Get all holdings
@@ -58,6 +59,18 @@ router.post('/', auth, async (req, res) => {
     });
 
     await holding.save();
+
+    // Log transaction
+    await Transaction.create({
+      userId: req.user.id,
+      symbol: holding.symbol,
+      type: 'buy',
+      shares: holding.shares,
+      price: holding.buyPrice,
+      portfolioType: holding.portfolioType,
+      date: holding.buyDate || new Date()
+    });
+
     res.status(201).json(holding);
   } catch (err) {
     console.error('Add holding error:', err);
@@ -95,14 +108,25 @@ router.put('/:id', auth, async (req, res) => {
 // Delete holding
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const holding = await Holding.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    const holding = await Holding.findOne({ _id: req.params.id, userId: req.user.id });
 
     if (!holding) {
       return res.status(404).json({ message: 'החזקה לא נמצאה' });
     }
+
+    const sellPrice = req.body?.sellPrice || holding.buyPrice;
+    await holding.deleteOne();
+
+    // Log transaction
+    await Transaction.create({
+      userId: req.user.id,
+      symbol: holding.symbol,
+      type: 'sell',
+      shares: holding.shares,
+      price: parseFloat(sellPrice),
+      portfolioType: holding.portfolioType,
+      date: new Date()
+    });
 
     res.json({ message: 'נמחק בהצלחה' });
   } catch (err) {

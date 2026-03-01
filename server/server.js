@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const rateLimit = require('express-rate-limit');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -12,6 +13,9 @@ const newsRoutes = require('./routes/news');
 const telegramRoutes = require('./routes/telegram');
 const tradingGoalsRoutes = require('./routes/tradingGoals');
 const brokersRoutes = require('./routes/brokers');
+const watchlistRoutes = require('./routes/watchlist');
+const transactionsRoutes = require('./routes/transactions');
+const alertsRoutes = require('./routes/alerts');
 
 // Telegram bot
 require('./services/telegramBot');
@@ -62,16 +66,39 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 /* =======================
+   Rate Limiting
+   ======================= */
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'יותר מדי ניסיונות, נסה שוב מאוחר יותר' }
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'יותר מדי בקשות, נסה שוב מאוחר יותר' }
+});
+
+/* =======================
    Routes
    ======================= */
 
-app.use('/api/auth', authRoutes);
-app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/stocks', stocksRoutes);
-app.use('/api/news', newsRoutes);
-app.use('/api/telegram', telegramRoutes);
-app.use('/api/trading-goals', tradingGoalsRoutes);
-app.use('/api/brokers', brokersRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/portfolio', generalLimiter, portfolioRoutes);
+app.use('/api/stocks', generalLimiter, stocksRoutes);
+app.use('/api/news', generalLimiter, newsRoutes);
+app.use('/api/telegram', generalLimiter, telegramRoutes);
+app.use('/api/trading-goals', generalLimiter, tradingGoalsRoutes);
+app.use('/api/brokers', generalLimiter, brokersRoutes);
+app.use('/api/watchlist', generalLimiter, watchlistRoutes);
+app.use('/api/transactions', generalLimiter, transactionsRoutes);
+app.use('/api/alerts', generalLimiter, alertsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

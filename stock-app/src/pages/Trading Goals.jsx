@@ -12,11 +12,13 @@ import Progress from "../components/ui/Progress"; // אם יש לך קומפונ
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTradingGoals, saveTradingGoals } from "../api/api";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 
 export default function TradingGoals() {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [baseCapital, setBaseCapital] = useState(10000);
   const [targetCapital, setTargetCapital] = useState(50000);
   const [weeklyReturn, setWeeklyReturn] = useState(5);
@@ -307,6 +309,7 @@ export default function TradingGoals() {
     if (hasLoadedRef.current) {
       saveMutation.mutate(buildPayload({ profitEntries: nextEntries }));
     }
+    addToast('success', 'הרווח נמחק');
     setIsProfitModalOpen(false);
   };
 
@@ -338,6 +341,7 @@ export default function TradingGoals() {
     if (hasLoadedRef.current) {
       saveMutation.mutate(buildPayload({ profitEntries: nextEntries }));
     }
+    addToast('success', 'הרווח נשמר');
     setIsProfitModalOpen(false);
   };
 

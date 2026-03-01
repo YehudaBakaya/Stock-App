@@ -14,17 +14,29 @@ const botCache = new Map();
 // Use webhook in production (Render), polling in development
 const isProduction = !!(process.env.RENDER || process.env.NODE_ENV === 'production');
 
+// Render may set RENDER_EXTERNAL_URL or RENDER_EXTERNAL_HOSTNAME
+const getRenderBaseUrl = () => {
+  if (process.env.RENDER_EXTERNAL_URL) return process.env.RENDER_EXTERNAL_URL;
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) return `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`;
+  if (process.env.SERVER_URL) return process.env.SERVER_URL;
+  return null;
+};
+
 // Initialize bot only if token exists
 if (token && token !== 'your-telegram-bot-token') {
-  if (isProduction && process.env.RENDER_EXTERNAL_URL) {
+  const renderBaseUrl = getRenderBaseUrl();
+  if (isProduction && renderBaseUrl) {
     bot = new TelegramBot(token, { polling: false });
-    const webhookUrl = `${process.env.RENDER_EXTERNAL_URL}/api/telegram/webhook/${token}`;
+    const webhookUrl = `${renderBaseUrl}/api/telegram/webhook/${token}`;
     bot.setWebHook(webhookUrl)
-      .then(() => console.log('🤖 Telegram bot started (webhook mode)'))
+      .then(() => console.log(`🤖 Telegram bot started (webhook → ${renderBaseUrl})`))
       .catch((err) => console.error('❌ Failed to set Telegram webhook:', err.message));
   } else {
     bot = new TelegramBot(token, { polling: true });
     console.log('🤖 Telegram bot started (polling mode)');
+    if (isProduction) {
+      console.warn('⚠️  No RENDER_EXTERNAL_URL / RENDER_EXTERNAL_HOSTNAME / SERVER_URL found — using polling');
+    }
   }
 
   // Handle /start command

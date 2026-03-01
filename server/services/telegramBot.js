@@ -122,33 +122,6 @@ ${arrow} <b>${symbol}</b>
   }
 };
 
-// Send daily summary
-const sendDailySummary = async (chatId, portfolioData, botToken) => {
-  const client = getBotForToken(botToken);
-  if (!client) return;
-  
-  const emoji = portfolioData.pnl >= 0 ? '🟢' : '🔴';
-  
-  const message = `
-📊 <b>סיכום יומי</b>
-
-💼 שווי תיק: $${portfolioData.totalValue.toLocaleString()}
-${emoji} רווח/הפסד: ${portfolioData.pnl >= 0 ? '+' : ''}$${portfolioData.pnl.toFixed(2)}
-📈 אחוז שינוי: ${portfolioData.pnl >= 0 ? '+' : ''}${portfolioData.pnlPercent.toFixed(2)}%
-
-🏆 מניה מובילה: ${portfolioData.topStock || 'N/A'}
-📉 מניה בפיגור: ${portfolioData.bottomStock || 'N/A'}
-
-⏰ ${new Date().toLocaleString('he-IL')}
-  `;
-  
-  try {
-    await client.sendMessage(chatId, message, { parse_mode: 'HTML' });
-  } catch (err) {
-    console.error('Error sending daily summary:', err);
-  }
-};
-
 // Send test message
 const sendTestMessage = async (chatId, botToken, userId) => {
   if (userId) {
@@ -460,14 +433,15 @@ const runEntryAlerts = async () => {
 };
 
 // Price alert cron — every 5 minutes
+// 1. Checks user-created price alerts (Alert model)
+// 2. Checks portfolio holdings for threshold-based alerts (notifyPriceChange)
 cron.schedule('*/5 * * * *', async () => {
   try {
     const Alert = require('../models/Alert');
     const { getQuote } = require('./stockService');
 
+    // --- User-created watchlist alerts ---
     const activeAlerts = await Alert.find({ isActive: true });
-    if (activeAlerts.length === 0) return;
-
     for (const alert of activeAlerts) {
       const quote = await getQuote(alert.symbol);
       if (!quote?.price) continue;
@@ -479,12 +453,10 @@ cron.schedule('*/5 * * * *', async () => {
 
       if (!triggered) continue;
 
-      // Deactivate alert
       alert.isActive = false;
       alert.triggeredAt = new Date();
       await alert.save();
 
-      // Send Telegram notification
       const settings = await TelegramSettings.findOne({ userId: alert.userId, isActive: true });
       if (!settings?.chatId) continue;
 
@@ -494,24 +466,50 @@ cron.schedule('*/5 * * * *', async () => {
         `🔔 <b>התראת מחיר</b>\n\n` +
         `${alert.symbol} ${direction} $${alert.targetPrice}\n` +
         `מחיר נוכחי: <b>$${price.toFixed(2)}</b>`;
-
       await client.sendMessage(settings.chatId, msg, { parse_mode: 'HTML' });
+    }
+
+    // --- Portfolio price-change alerts (notifyPriceChange) ---
+    const priceAlertUsers = await TelegramSettings.find({
+      isActive: true,
+      notifyPriceChange: true,
+    }).lean();
+
+    for (const settings of priceAlertUsers) {
+      const holdings = await Holding.find({ userId: settings.userId }).lean();
+      const symbols = [...new Set(holdings.map((h) => h.symbol))];
+      for (const symbol of symbols) {
+        try {
+          const quote = await getQuote(symbol);
+          if (!quote?.price || !Number.isFinite(quote.changePercent)) continue;
+          const threshold = settings.priceThreshold || 5;
+          if (Math.abs(quote.changePercent) < threshold) continue;
+
+          const key = `portfolio-price-${settings.userId}-${symbol}`;
+          if (!shouldSendAlert(key, 4 * 60 * 60 * 1000)) continue;
+
+          const client = getBotForToken(settings.botToken);
+          if (!client) continue;
+
+          const isUp = quote.changePercent >= 0;
+          const msg =
+            `${isUp ? '📈' : '📉'} <b>שינוי מחיר בתיק</b>\n\n` +
+            `<b>${symbol}</b>\n` +
+            `מחיר: $${Number(quote.price).toFixed(2)}\n` +
+            `שינוי יומי: ${isUp ? '+' : ''}${Number(quote.changePercent).toFixed(2)}%\n\n` +
+            `⏰ ${new Date().toLocaleString('he-IL')}`;
+          await client.sendMessage(settings.chatId, msg, { parse_mode: 'HTML' });
+        } catch (err) {
+          console.error(`Portfolio price alert error (${symbol}):`, err.message);
+        }
+      }
     }
   } catch (err) {
     console.error('Price alert cron error:', err.message || err);
   }
 }, { timezone: 'Asia/Jerusalem' });
 
-// Schedule daily summary at 18:00 Israel time
 if (bot) {
-  cron.schedule('0 18 * * *', async () => {
-    console.log('📊 Running daily summary job...');
-    // Here you would fetch all users with active notifications
-    // and send them their daily summary
-  }, {
-    timezone: 'Asia/Jerusalem'
-  });
-
   cron.schedule('*/30 * * * *', async () => {
     console.log('🚨 Running entry alert job...');
     await runEntryAlerts();
@@ -590,7 +588,6 @@ const handleWebhookUpdate = (update) => {
 module.exports = {
   bot,
   sendPriceAlert,
-  sendDailySummary,
   sendTestMessage,
   sendEntryAlert,
   handleWebhookUpdate,

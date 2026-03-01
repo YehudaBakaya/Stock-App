@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, RefreshCw, TrendingUp, Wallet, Activity, Send, Briefcase, Download } from 'lucide-react';
-import { getHoldings, addHolding, deleteHolding, getTelegramSettings, saveTelegramSettings, getStockQuote } from '../api/api';
+import { getHoldings, addHolding, deleteHolding, getTelegramSettings, saveTelegramSettings, deleteTelegramSettings, getStockQuote } from '../api/api';
 import { exportHoldingsToCSV } from '../utils/export';
 import { useToast } from '../context/ToastContext';
 import { HoldingRowSkeleton } from '../components/ui/Skeleton';
@@ -74,7 +74,20 @@ export default function Dashboard() {
     mutationFn: saveTelegramSettings,
     onSuccess: () => {
       queryClient.invalidateQueries(['telegramSettings']);
-    }
+      addToast('success', 'הגדרות טלגרם נשמרו');
+    },
+    onError: () => addToast('error', 'שגיאה בשמירת הגדרות טלגרם'),
+  });
+
+  // Delete telegram settings mutation
+  const deleteTelegramMutation = useMutation({
+    mutationFn: deleteTelegramSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['telegramSettings']);
+      setShowTelegramSettings(false);
+      addToast('success', 'טלגרם נותק');
+    },
+    onError: () => addToast('error', 'שגיאה בניתוק טלגרם'),
   });
 
 
@@ -255,6 +268,7 @@ export default function Dashboard() {
               <TelegramSettings
                 settings={telegramSettings}
                 onSave={(data) => saveTelegramMutation.mutate(data)}
+                onDelete={() => deleteTelegramMutation.mutate()}
               />
             </motion.div>
           )}

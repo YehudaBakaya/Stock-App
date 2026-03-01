@@ -76,6 +76,7 @@ export const getMarketNews = (params = {}) => api.get('/news', { params });
 export const getTelegramSettings = () => api.get('/telegram');
 export const saveTelegramSettings = (data) => api.post('/telegram', data);
 export const sendTelegramTest = () => api.post('/telegram/test');
+export const deleteTelegramSettings = () => api.delete('/telegram');
 
 // Trading Goals
 export const getTradingGoals = () => api.get('/trading-goals');

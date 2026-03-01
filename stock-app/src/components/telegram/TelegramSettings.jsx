@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Send, Bell, MessageCircle, Check, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Send, Bell, MessageCircle, Check, ShieldCheck, AlertTriangle, Trash2 } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Switch from '../ui/Switch';
 import { sendTelegramTest } from '../../api/api';
 
-export default function TelegramSettings({ settings, onSave }) {
+export default function TelegramSettings({ settings, onSave, onDelete }) {
   const [chatId, setChatId] = useState(settings?.chatId || '');
   const [botToken, setBotToken] = useState(settings?.botToken || '');
   const [isActive, setIsActive] = useState(settings?.isActive || false);
@@ -216,22 +216,22 @@ export default function TelegramSettings({ settings, onSave }) {
               <p className="text-gray-500 text-sm">קבל התראות לטלגרם</p>
             </div>
           </div>
-          <Switch checked={isActive} onChange={setIsActive} />
+          <Switch checked={isActive} onCheckedChange={setIsActive} />
         </div>
 
         {/* Notification Types */}
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">התראות שינוי מחיר</span>
-            <Switch checked={notifyPriceChange} onChange={setNotifyPriceChange} />
+            <Switch checked={notifyPriceChange} onCheckedChange={setNotifyPriceChange} />
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">סיכום יומי</span>
-            <Switch checked={notifyDailySummary} onChange={setNotifyDailySummary} />
+            <Switch checked={notifyDailySummary} onCheckedChange={setNotifyDailySummary} />
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">התראות כניסה לעסקה</span>
-            <Switch checked={notifyEntryAlerts} onChange={setNotifyEntryAlerts} />
+            <Switch checked={notifyEntryAlerts} onCheckedChange={setNotifyEntryAlerts} />
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export default function TelegramSettings({ settings, onSave }) {
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">דוח יומי</span>
-            <Switch checked={summaryDailyEnabled} onChange={setSummaryDailyEnabled} />
+            <Switch checked={summaryDailyEnabled} onCheckedChange={setSummaryDailyEnabled} />
           </div>
           {summaryDailyEnabled && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -281,7 +281,7 @@ export default function TelegramSettings({ settings, onSave }) {
           )}
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">דוח שבועי</span>
-            <Switch checked={summaryWeeklyEnabled} onChange={setSummaryWeeklyEnabled} />
+            <Switch checked={summaryWeeklyEnabled} onCheckedChange={setSummaryWeeklyEnabled} />
           </div>
           {summaryWeeklyEnabled && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -314,7 +314,7 @@ export default function TelegramSettings({ settings, onSave }) {
           )}
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
             <span className="text-gray-300">דוח חודשי</span>
-            <Switch checked={summaryMonthlyEnabled} onChange={setSummaryMonthlyEnabled} />
+            <Switch checked={summaryMonthlyEnabled} onCheckedChange={setSummaryMonthlyEnabled} />
           </div>
           {summaryMonthlyEnabled && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -339,7 +339,7 @@ export default function TelegramSettings({ settings, onSave }) {
           )}
         </div>
 
-        {/* Save Button */}
+        {/* Save / Test / Delete Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Button onClick={handleSave} className="w-full" variant={saved ? 'secondary' : 'primary'}>
             {saved ? (
@@ -360,6 +360,16 @@ export default function TelegramSettings({ settings, onSave }) {
             {isTesting ? 'בודק...' : 'בדוק שליחה'}
           </Button>
         </div>
+        {onDelete && settings?.chatId && (
+          <Button
+            onClick={onDelete}
+            className="w-full mt-1"
+            variant="ghost"
+          >
+            <Trash2 className="w-4 h-4 ml-2 text-red-400" />
+            <span className="text-red-400">נתק טלגרם</span>
+          </Button>
+        )}
       </div>
     </Card>
   );

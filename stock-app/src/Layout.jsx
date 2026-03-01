@@ -1,10 +1,12 @@
   import { useEffect, useState } from 'react';
   import { Link, useLocation } from 'react-router-dom';
   import { useTranslation } from 'react-i18next';
+  import { useQuery } from '@tanstack/react-query';
   import { useAuth } from './context/AuthContext';
   import { useTheme } from './components/Profile/ThemeProvider';
   import Switch from './components/ui/Switch';
   import ApiStatusBadge from './components/ui/ApiStatusBadge';
+  import { getAlerts } from './api/api';
   import {
     BarChart3,
     TrendingUp,
@@ -27,6 +29,16 @@
     const { theme, toggleTheme } = useTheme();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    const { data: alertsData = [] } = useQuery({
+      queryKey: ['alerts'],
+      queryFn: async () => {
+        const res = await getAlerts();
+        return res.data;
+      },
+      refetchInterval: 60_000,
+    });
+    const activeAlertCount = alertsData.filter((a) => a.isActive).length;
+
     useEffect(() => {
       const nextLang = i18n.language || 'en';
       document.documentElement.setAttribute('lang', nextLang);
@@ -39,7 +51,7 @@
   { title: 'ניתוח מניות', url: '/analysis', icon: LineChart },
   { title: t('nav.trading'), url: '/trading', icon: Zap },
   { title: t('nav.portfolio'), url: '/Portfolio', icon: Briefcase },
-  { title: 'Watchlist', url: '/watchlist', icon: Star },
+  { title: 'רשימת מעקב', url: '/watchlist', icon: Star },
   { title: 'היסטוריה', url: '/transactions', icon: History },
   { title: t('nav.profile'), url: '/profile', icon: User },
 ];
@@ -156,9 +168,11 @@
               </div>
               <button className="relative" aria-label="התראות">
                 <Bell className="w-5 h-5 text-slate-300" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full text-[10px] flex items-center justify-center text-black font-bold">
-                  3
-                </span>
+                {activeAlertCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full text-[10px] flex items-center justify-center text-black font-bold">
+                    {activeAlertCount > 9 ? '9+' : activeAlertCount}
+                  </span>
+                )}
               </button>
             </div>
           </header>

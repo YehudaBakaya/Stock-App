@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { History, TrendingUp, TrendingDown } from 'lucide-react';
@@ -5,6 +6,8 @@ import { getTransactions } from '../api/api';
 import Card from '../components/ui/Card';
 
 export default function Transactions() {
+  const [filterType, setFilterType] = useState('all');
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
@@ -12,6 +15,10 @@ export default function Transactions() {
       return res.data;
     }
   });
+
+  const filtered = transactions
+    .filter((t) => filterType === 'all' || t.type === filterType)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
     <div className="min-h-screen app-bg p-4 md:p-6 pb-24 md:pb-6" dir="rtl">
@@ -26,6 +33,26 @@ export default function Transactions() {
             היסטוריית עסקאות
           </h1>
           <p className="text-slate-400 mt-2">כל פעולות הקנייה והמכירה שלך</p>
+          <div className="flex gap-2 mt-4">
+            {[
+              { key: 'all', label: 'הכל' },
+              { key: 'buy', label: 'קנייה' },
+              { key: 'sell', label: 'מכירה' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFilterType(key)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  filterType === key
+                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div
@@ -47,7 +74,7 @@ export default function Transactions() {
                   </div>
                 ))}
               </div>
-            ) : transactions.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
                   <History className="w-8 h-8 text-emerald-400" />
@@ -73,7 +100,7 @@ export default function Transactions() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {transactions.map((tx) => (
+                      {filtered.map((tx) => (
                         <tr key={tx._id} className="hover:bg-white/[0.02] transition-colors">
                           <td className="py-3 pr-3 text-slate-400">
                             {new Date(tx.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
@@ -103,7 +130,7 @@ export default function Transactions() {
 
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-2">
-                  {transactions.map((tx) => (
+                  {filtered.map((tx) => (
                     <div key={tx._id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
                       <div className={`w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center ${
                         tx.type === 'buy' ? 'bg-emerald-500/15' : 'bg-rose-500/15'

@@ -205,18 +205,18 @@ export default function Stocks() {
         >
           <div>
             <h1 className="text-3xl md:text-4xl font-bold font-display text-white mb-1">
-              Stock Market
+              שוק המניות
             </h1>
             <p className="text-slate-400 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
-              Explore and trade stocks
+              חקור מניות, עקוב אחרי מחירים בזמן אמת
             </p>
           </div>
           <div className="flex gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search stocks..."
+                placeholder="חפש מניה..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -224,10 +224,10 @@ export default function Stocks() {
               {searchQuery.trim().length > 0 && (
                 <div className="absolute left-0 right-0 mt-2 bg-[#0f1722] border border-white/10 rounded-xl shadow-xl z-20 max-h-72 overflow-auto">
                   {searching && (
-                    <div className="px-4 py-3 text-sm text-slate-400">Searching...</div>
+                    <div className="px-4 py-3 text-sm text-slate-400">מחפש...</div>
                   )}
                   {!searching && searchResults.length === 0 && (
-                    <div className="px-4 py-3 text-sm text-slate-400">No results</div>
+                    <div className="px-4 py-3 text-sm text-slate-400">לא נמצאו תוצאות</div>
                   )}
                   {searchResults.map((result) => (
                     <button
@@ -248,10 +248,6 @@ export default function Stocks() {
                 </div>
               )}
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
           </div>
         </motion.div>
 
@@ -273,28 +269,28 @@ export default function Stocks() {
                     size="sm"
                     onClick={() => setSortBy('symbol')}
                   >
-                    Symbol
+                    סמל
                   </Button>
                   <Button
                     variant={sortBy === 'changePercent' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => setSortBy('changePercent')}
                   >
-                    % Change
+                    % שינוי
                   </Button>
                   <Button
                     variant={sortBy === 'volume' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => setSortBy('volume')}
                   >
-                    Volume
+                    נפח
                   </Button>
                   <Button
                     variant={sortBy === 'price' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => setSortBy('price')}
                   >
-                    Price
+                    מחיר
                   </Button>
                 </div>
               </div>

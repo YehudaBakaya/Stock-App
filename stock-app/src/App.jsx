@@ -23,7 +23,7 @@ function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-950" />;
+    return <div className="min-h-screen app-bg" />;
   }
 
   return user ? children : <Navigate to="/login" replace />;

@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, TrendingUp, TrendingDown, PieChart, DollarSign } from "lucide-react";
+import { Briefcase, TrendingUp, TrendingDown, PieChart, DollarSign, RefreshCw } from "lucide-react";
 import Card from "../components/ui/Card";
 import CardContent from "../components/ui/CardContent";
 import CardHeader from "../components/ui/CardHeader";
 import CardTitle from "../components/ui/CardTitle";
 import { useQuery } from "@tanstack/react-query";
 import { getHoldings, getStockQuote, getStockHistory } from "../api/api";
+import { HoldingRowSkeleton } from "../components/ui/Skeleton";
 
 import { 
   PieChart as RechartsPieChart, 
@@ -312,7 +313,7 @@ export default function Portfolio() {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
           <Briefcase className="w-6 h-6 text-white" />
-          <h1 className="text-3xl font-bold font-display text-white">Portfolio</h1>
+          <h1 className="text-3xl font-bold font-display text-white">תיק השקעות</h1>
         </motion.div>
 
         {/* Portfolio Summary */}
@@ -367,7 +368,7 @@ export default function Portfolio() {
           <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PieChart className="w-5 h-5"/>
-            Asset Allocation
+            פיזור אחזקות
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -412,7 +413,10 @@ export default function Portfolio() {
           </CardHeader>
           <CardContent>
             {performanceLoading && (
-              <p className="text-slate-400 text-sm">מחשב ביצועים...</p>
+              <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                מחשב ביצועים...
+              </div>
             )}
             {performanceError && (
               <p className="text-rose-300 text-sm">{performanceError}</p>
@@ -439,7 +443,9 @@ export default function Portfolio() {
         {isLoading && (
           <Card>
             <CardContent>
-              <p className="text-slate-400 text-sm">טוען נתונים...</p>
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => <HoldingRowSkeleton key={i} />)}
+              </div>
             </CardContent>
           </Card>
         )}

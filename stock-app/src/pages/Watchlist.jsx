@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Star, Plus, Trash2, Bell, BellOff, Search, X } from 'lucide-react';
+import { Star, Plus, Trash2, Bell, BellOff, Search, X, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   getWatchlist, addToWatchlist, removeFromWatchlist,
   getAlerts, createAlert, deleteAlert, toggleAlert,
@@ -158,7 +158,7 @@ export default function Watchlist() {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="text-4xl font-black font-display bg-gradient-to-r from-white via-emerald-100 to-amber-100 bg-clip-text text-transparent">
-            Watchlist
+            רשימת מעקב
           </h1>
           <p className="text-slate-400 mt-2">עקוב אחרי מניות והגדר התראות מחיר</p>
         </motion.div>
@@ -293,24 +293,24 @@ export default function Watchlist() {
                   <button
                     type="button"
                     onClick={() => setAlertCondition('above')}
-                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${
                       alertCondition === 'above'
                         ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                         : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
                     }`}
                   >
-                    ⬆️ מעל
+                    <TrendingUp className="w-4 h-4" /> מעל
                   </button>
                   <button
                     type="button"
                     onClick={() => setAlertCondition('below')}
-                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${
                       alertCondition === 'below'
                         ? 'bg-rose-500/20 border-rose-500/50 text-rose-300'
                         : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
                     }`}
                   >
-                    ⬇️ מתחת
+                    <TrendingDown className="w-4 h-4" /> מתחת
                   </button>
                 </div>
                 <input
@@ -348,8 +348,13 @@ export default function Watchlist() {
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${alert.isActive ? 'bg-emerald-400' : 'bg-slate-500'}`} />
                         <div>
-                          <p className="text-sm font-semibold text-white">
-                            {alert.symbol} {alert.condition === 'above' ? '⬆️' : '⬇️'} ${alert.targetPrice}
+                          <p className="text-sm font-semibold text-white flex items-center gap-1">
+                            {alert.symbol}
+                            {alert.condition === 'above'
+                              ? <TrendingUp className="w-3 h-3 text-emerald-400" />
+                              : <TrendingDown className="w-3 h-3 text-rose-400" />
+                            }
+                            ${alert.targetPrice}
                           </p>
                           <p className="text-xs text-slate-400">
                             {alert.isActive

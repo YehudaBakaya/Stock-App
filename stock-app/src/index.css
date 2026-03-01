@@ -116,3 +116,15 @@ body {
 .float-slow {
   animation: float-slow 10s ease-in-out infinite;
 }
+
+/* Light mode — gray backgrounds not covered by default overrides */
+.light .bg-gray-800\/50 { background-color: rgba(15, 23, 42, 0.06); }
+.light .bg-gray-800    { background-color: rgba(15, 23, 42, 0.06); }
+.light .bg-gray-700\/50 { background-color: rgba(15, 23, 42, 0.10); }
+.light .bg-gray-700    { background-color: rgba(15, 23, 42, 0.10); }
+.light .bg-gray-900    { background-color: rgba(255, 255, 255, 0.95); }
+.light .bg-gray-900\/95 { background-color: rgba(255, 255, 255, 0.95); }
+.light .border-gray-700\/50 { border-color: rgba(15, 23, 42, 0.12); }
+.light .border-gray-700    { border-color: rgba(15, 23, 42, 0.12); }
+.light .bg-white\/10   { background-color: rgba(15, 23, 42, 0.08); }
+.light .bg-slate-600   { background-color: #cbd5e1; }

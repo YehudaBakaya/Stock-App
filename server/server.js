@@ -20,7 +20,7 @@ const transactionsRoutes = require('./routes/transactions');
 const alertsRoutes = require('./routes/alerts');
 
 // Telegram bot
-require('./services/telegramBot');
+const { handleWebhookUpdate } = require('./services/telegramBot');
 
 const app = express();
 
@@ -66,6 +66,19 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+/* =======================
+   Telegram Webhook
+   (no rate limit — Telegram needs direct access)
+   ======================= */
+
+const telegramToken = process.env.TELEGRAM_BOT_TOKEN || '';
+if (telegramToken && telegramToken !== 'your-telegram-bot-token') {
+  app.post(`/api/telegram/webhook/${telegramToken}`, (req, res) => {
+    handleWebhookUpdate(req.body);
+    res.sendStatus(200);
+  });
+}
 
 /* =======================
    Rate Limiting

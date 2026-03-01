@@ -11,10 +11,21 @@ const TWELVE_BASE_URL = 'https://api.twelvedata.com';
 let bot = null;
 const botCache = new Map();
 
+// Use webhook in production (Render), polling in development
+const isProduction = !!(process.env.RENDER || process.env.NODE_ENV === 'production');
+
 // Initialize bot only if token exists
 if (token && token !== 'your-telegram-bot-token') {
-  bot = new TelegramBot(token, { polling: true });
-  console.log('🤖 Telegram bot started');
+  if (isProduction && process.env.RENDER_EXTERNAL_URL) {
+    bot = new TelegramBot(token, { polling: false });
+    const webhookUrl = `${process.env.RENDER_EXTERNAL_URL}/api/telegram/webhook/${token}`;
+    bot.setWebHook(webhookUrl)
+      .then(() => console.log('🤖 Telegram bot started (webhook mode)'))
+      .catch((err) => console.error('❌ Failed to set Telegram webhook:', err.message));
+  } else {
+    bot = new TelegramBot(token, { polling: true });
+    console.log('🤖 Telegram bot started (polling mode)');
+  }
 
   // Handle /start command
   bot.onText(/\/start/, (msg) => {
@@ -560,10 +571,15 @@ if (bot) {
   });
 }
 
+const handleWebhookUpdate = (update) => {
+  if (bot) bot.processUpdate(update);
+};
+
 module.exports = {
   bot,
   sendPriceAlert,
   sendDailySummary,
   sendTestMessage,
-  sendEntryAlert
+  sendEntryAlert,
+  handleWebhookUpdate,
 };
